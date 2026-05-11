@@ -54,6 +54,21 @@ const config: ZudokuConfig = {
         border-bottom: 1px solid #e4e4e7 !important;
       }
 
+      /* Page content header - the one with title, copy button, etc */
+      header.flow-root {
+        padding-top: 0.5rem !important;
+        padding-bottom: 1.5rem !important;
+      }
+
+      /* Adjust h1 inside page header to have proper spacing */
+      header.flow-root h1 {
+        margin-top: 0.5rem !important;
+      }
+
+      .dark header.flow-root {
+        background: rgba(9, 9, 11, 0.85) !important;
+      }
+
       .dark header {
         background: rgba(9, 9, 11, 0.85) !important;
         border-bottom: 1px solid #27272a !important;
@@ -921,7 +936,7 @@ const config: ZudokuConfig = {
     logo: {
       src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
       alt: "Zu",
-      width: "48px",
+      width: "80px",
     },
   },
   navigation: [
