@@ -15,7 +15,7 @@ Visual component showing your API rate limit usage.
     <span>750 / 1,000 remaining</span>
   </div>
   <div class="rate-limit-bar">
-    <div class="rate-limit-fill" style="width: 25%"></div>
+    <div class="rate-limit-fill" style={{width: "25%"}}></div>
   </div>
   <div class="rate-limit-footer">
     <span>Used: 250</span>
@@ -31,11 +31,11 @@ Visual component showing your API rate limit usage.
     <span>150 / 1,000 remaining</span>
   </div>
   <div class="rate-limit-bar">
-    <div class="rate-limit-fill warning" style="width: 85%"></div>
+    <div class="rate-limit-fill warning" style={{width: "85%"}}></div>
   </div>
   <div class="rate-limit-footer">
     <span>Used: 850</span>
-    <span>⚠️ Resets in: 30s</span>
+    <span>Resets in: 30s</span>
   </div>
 </div>
 
@@ -47,35 +47,35 @@ Visual component showing your API rate limit usage.
     <span>25 / 1,000 remaining</span>
   </div>
   <div class="rate-limit-bar">
-    <div class="rate-limit-fill critical" style="width: 97.5%"></div>
+    <div class="rate-limit-fill critical" style={{width: "97.5%"}}></div>
   </div>
   <div class="rate-limit-footer">
     <span>Used: 975</span>
-    <span>🚨 Resets in: 15s</span>
+    <span>Resets in: 15s</span>
   </div>
 </div>
 
 ## Inline Badge (Compact)
 
-<div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+<div style={{display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap"}}>
   <div class="rate-limit-badge">
     <span class="rate-limit-badge-dot"></span>
     <span>980/1000</span>
-    <span>•</span>
+    <span>-</span>
     <span>Resets in 45s</span>
   </div>
 
   <div class="rate-limit-badge warning">
     <span class="rate-limit-badge-dot"></span>
     <span>850/1000</span>
-    <span>•</span>
+    <span>-</span>
     <span>Resets in 30s</span>
   </div>
 
   <div class="rate-limit-badge critical">
     <span class="rate-limit-badge-dot"></span>
     <span>975/1000</span>
-    <span>•</span>
+    <span>-</span>
     <span>Resets in 15s</span>
   </div>
 </div>
@@ -89,7 +89,7 @@ Visual component showing your API rate limit usage.
     <span>750 / 1,000 remaining</span>
   </div>
   <div class="rate-limit-bar">
-    <div class="rate-limit-fill" style="width: 25%"></div>
+    <div class="rate-limit-fill" style={{width: "25%"}}></div>
   </div>
   <div class="rate-limit-footer">
     <span>Used: 250</span>
@@ -107,101 +107,3 @@ The API includes rate limit info in response headers:
 | `X-RateLimit-Limit` | Total requests allowed per window |
 | `X-RateLimit-Remaining` | Requests remaining in current window |
 | `X-RateLimit-Reset` | Unix timestamp when the limit resets |
-
-<style>{`
-  .rate-limit-viz {
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin: 1rem 0;
-    background: var(--card);
-  }
-
-  .rate-limit-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  .rate-limit-header span:first-child {
-    font-weight: 600;
-    color: var(--foreground);
-  }
-
-  .rate-limit-header span:last-child {
-    color: var(--muted-foreground);
-    font-family: var(--font-mono);
-  }
-
-  .rate-limit-bar {
-    height: 8px;
-    background: var(--muted);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .rate-limit-fill {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-  }
-
-  .rate-limit-fill.warning {
-    background: var(--destructive);
-  }
-
-  .rate-limit-fill.critical {
-    background: #991b1b;
-  }
-
-  .rate-limit-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-
-  .rate-limit-footer span {
-    font-family: var(--font-mono);
-  }
-
-  .rate-limit-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.75rem;
-    font-family: var(--font-mono);
-    background: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 2rem;
-  }
-
-  .rate-limit-badge-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--primary);
-  }
-
-  .rate-limit-badge.warning {
-    border-color: var(--destructive);
-  }
-
-  .rate-limit-badge.warning .rate-limit-badge-dot {
-    background: var(--destructive);
-  }
-
-  .rate-limit-badge.critical {
-    border-color: #991b1b;
-    background: rgba(153, 27, 27, 0.1);
-  }
-
-  .rate-limit-badge.critical .rate-limit-badge-dot {
-    background: #991b1b;
-  }
-`}</style>

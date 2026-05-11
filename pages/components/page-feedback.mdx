@@ -19,10 +19,10 @@ Let us know if this documentation was helpful.
       <span>No</span>
     </button>
   </div>
-  <div class="feedback-response feedback-response--yes" style="display:none">
+  <div class="feedback-response feedback-response--yes" style={{display: "none"}}>
     <div class="feedback-message">Thanks for the feedback! Glad we could help.</div>
   </div>
-  <div class="feedback-response feedback-response--no" style="display:none">
+  <div class="feedback-response feedback-response--no" style={{display: "none"}}>
     <div class="feedback-message">
       <strong>Sorry to hear that.</strong>
       <span>How can we improve this page?</span>
@@ -58,157 +58,7 @@ Let us know if this documentation was helpful.
   </a>
 </div>
 
-<style>{`
-  .feedback-container {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 2rem;
-    text-align: center;
-    background: var(--card);
-    margin: 2rem 0;
-  }
 
-  .feedback-question {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-  }
-
-  .feedback-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-  }
-
-  .feedback-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--background);
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.15s ease;
-  }
-
-  .feedback-btn:hover {
-    border-color: var(--primary);
-    background: var(--accent);
-  }
-
-  .feedback-btn--yes:hover {
-    border-color: #166534;
-  }
-
-  .feedback-btn--no:hover {
-    border-color: var(--destructive);
-  }
-
-  .feedback-icon {
-    font-size: 1.25rem;
-  }
-
-  .feedback-response {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .feedback-message {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .feedback-message strong {
-    color: var(--foreground);
-  }
-
-  .feedback-message span {
-    color: var(--muted-foreground);
-    font-size: 0.875rem;
-  }
-
-  .feedback-textarea {
-    width: 100%;
-    min-height: 80px;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--background);
-    color: var(--foreground);
-    font-size: 0.875rem;
-    resize: vertical;
-    margin-top: 0.5rem;
-  }
-
-  .feedback-textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
-
-  .feedback-submit {
-    padding: 0.5rem 1rem;
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border: none;
-    border-radius: var(--radius);
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-  }
-
-  .feedback-submit:hover {
-    opacity: 0.9;
-  }
-
-  .support-links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .support-link {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--background);
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.15s ease;
-  }
-
-  .support-link:hover {
-    border-color: var(--primary);
-    background: var(--accent);
-  }
-
-  .support-icon {
-    font-size: 1.5rem;
-  }
-
-  .support-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .support-content strong {
-    font-size: 0.875rem;
-    color: var(--foreground);
-  }
-
-  .support-content span {
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-`}</style>
 
 <script>{`
   document.addEventListener('DOMContentLoaded', function() {
