@@ -69,6 +69,27 @@ zudoku/
 └── README.md
 ```
 
+## Screenshots
+
+### UI Component Showcase
+![UI Components Overview](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/components-overview.png)
+
+### Interactive Components
+![Feature Cards](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/feature-cards.png)
+![Integration Showcase](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/integration-showcase.png)
+
+### Navigation Components
+![Table of Contents](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/table-of-contents.png)
+![Breadcrumb Navigation](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/breadcrumb.png)
+
+### Content Components
+![Status Page](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/status-page.png)
+![Changelog Timeline](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/changelog.png)
+
+### API Documentation
+![API Parameters Table](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/api-parameters.png)
+![Code Examples](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/code-examples.png)
+
 ## Component Library
 
 This project includes **30+ reusable UI components** for API documentation sites. Browse them under `pages/components/`:
