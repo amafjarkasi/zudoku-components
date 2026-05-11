@@ -1,9 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
   <defs>
-    <linearGradient id="zuGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="zephGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#6366f1"/>
       <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
+    <linearGradient id="zephAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
   </defs>
-  <text x="0" y="26" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="26" font-weight="800" fill="url(#zuGrad)" letter-spacing="-0.04em">Zu</text>
+  <path d="M8 10 L18 10 L12 20 L22 20" stroke="url(#zephAccent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="28" cy="14" r="3" fill="url(#zephGrad)" opacity="0.6"/>
+  <text x="38" y="28" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="url(#zephGrad)" letter-spacing="-0.03em">Zephyr</text>
 </svg>

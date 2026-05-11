@@ -225,10 +225,10 @@ const config: ZudokuConfig = {
          ============================================
          CSS classes for the Zu text logo:
          
-         .zu-logo - Base logo container
-         .zu-logo--sm - Small size (32px height)
-         .zu-logo--md - Medium size (48px height, default)
-         .zu-logo--lg - Large size (64px height)
+         .zephyr-logo - Base logo container
+         .zephyr-logo--sm - Small size (32px height)
+         .zephyr-logo--md - Medium size (48px height, default)
+         .zephyr-logo--lg - Large size (64px height)
          
          Usage:
          <span class="zu-logo zu-logo--md">Zu</span>
@@ -237,7 +237,7 @@ const config: ZudokuConfig = {
          works in both light and dark modes.
          ============================================ */
       
-      .zu-logo {
+      .zephyr-logo {
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
         font-weight: 700;
         letter-spacing: -0.02em;
@@ -246,45 +246,45 @@ const config: ZudokuConfig = {
         transition: opacity 0.2s ease;
       }
       
-      .zu-logo:hover {
+      .zephyr-logo:hover {
         opacity: 0.85;
       }
       
-      .zu-logo--sm {
+      .zephyr-logo--sm {
         font-size: 14px;
         height: 32px;
       }
       
-      .zu-logo--md {
+      .zephyr-logo--md {
         font-size: 20px;
         height: 48px;
       }
       
-      .zu-logo--lg {
+      .zephyr-logo--lg {
         font-size: 28px;
         height: 64px;
       }
       
       /* Logo text color - adapts to theme */
-      .zu-logo {
+      .zephyr-logo {
         color: #7c3aed; /* Primary violet for light mode */
       }
       
-      .dark .zu-logo {
+      .dark .zephyr-logo {
         color: #a78bfa; /* Lighter violet for dark mode */
       }
       
       /* Responsive logo sizing */
       @media (max-width: 768px) {
-        .zu-logo--lg {
+        .zephyr-logo--lg {
           font-size: 22px;
           height: 48px;
         }
       }
       
       @media (max-width: 480px) {
-        .zu-logo--md,
-        .zu-logo--lg {
+        .zephyr-logo--md,
+        .zephyr-logo--lg {
           font-size: 18px;
           height: 40px;
         }
@@ -952,8 +952,8 @@ const config: ZudokuConfig = {
   site: {
     logo: {
       src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
-      alt: "Zu",
-      width: "80px",
+      alt: "Zephyr",
+      width: "120px",
     },
   },
   navigation: [
@@ -1144,9 +1144,9 @@ items: [
     },
   ],
   // search: { type: "inkeep", options: { apiKey: "...", integrationId: "...", organizationId: "..." } },
-  metadata: {
-    title: "Zu Developer Portal",
-    description: "API documentation and reference for Zu ΓÇö the next-generation developer platform for e-commerce, analytics, and auth.",
+metadata: {
+    title: "Zephyr Developer Portal",
+    description: "API documentation and reference for Zephyr — the next-generation developer platform for e-commerce, analytics, and auth.",
   },
   syntaxHighlighting: {
     languages: [...defaultLanguages, "http"],
@@ -1158,4 +1158,5 @@ items: [
 };
 
 export default config;
+
 
