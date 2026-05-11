@@ -442,7 +442,7 @@ const config: ZudokuConfig = {
       }
       
       .code-tabs summary::before {
-        content: "▶";
+        content: "Γû╢";
         font-size: 0.625rem;
         transition: transform 0.15s ease;
       }
@@ -837,7 +837,7 @@ const config: ZudokuConfig = {
       
       /* Checkmark icon for completed */
       .tutorial-step--completed .tutorial-step__number::after {
-        content: "✓";
+        content: "Γ£ô";
         font-size: 1rem;
       }
       
@@ -911,1278 +911,219 @@ const config: ZudokuConfig = {
         justify-content: center;
       }
       
-.mermaid svg {
+      .mermaid svg {
         max-width: 100%;
         height: auto;
       }
-
-      /* ============================================
-         FEATURE DISCOVERY CARDS
-         ============================================ */
-      .feature-discovery {
-        padding: 2rem 0;
-      }
-
-      .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-      }
-
-      .feature-card {
-        display: flex;
-        flex-direction: column;
-        padding: 1.5rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        text-decoration: none;
-        transition: all 0.2s ease;
-      }
-
-      .feature-card:hover {
-        border-color: var(--primary);
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
-        transform: translateY(-2px);
-      }
-
-      .feature-card-icon {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-      }
-
-      .feature-card-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--foreground);
-        margin-bottom: 0.5rem;
-      }
-
-      .feature-card-desc {
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-        flex: 1;
-        margin-bottom: 1rem;
-      }
-
-      .feature-card-link {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--primary);
-      }
-
-      /* ============================================
-         COMMUNITY LINKS BANNER
-         ============================================ */
-      .community-banner {
-        background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
-        border-radius: var(--radius);
-        padding: 2rem;
-        text-align: center;
-        margin: 2rem 0;
-      }
-
-      .community-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 0.5rem;
-      }
-
-      .community-desc {
-        color: rgba(255,255,255,0.85);
-        margin-bottom: 1.5rem;
-      }
-
-      .community-grid {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-      }
-
-      .community-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        background: rgba(255,255,255,0.15);
-        border-radius: 0.5rem;
-        color: white;
-        text-decoration: none;
-        min-width: 100px;
-        transition: background 0.2s ease;
-      }
-
-      .community-item:hover {
-        background: rgba(255,255,255,0.25);
-      }
-
-      .community-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .community-info {
-        font-size: 0.75rem;
-        opacity: 0.9;
-      }
-
-      .community-badge {
-        font-weight: 600;
-      }
-
-      /* ============================================
-         CHANGELOG TIMELINE
-         ============================================ */
-      .changelog-timeline {
-        margin: 2rem 0;
-        position: relative;
-        padding-left: 2rem;
-      }
-
-      .changelog-timeline::before {
-        content: "";
-        position: absolute;
-        left: 0.5rem;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--border);
-      }
-
-      .changelog-item {
-        position: relative;
-        padding-bottom: 1.5rem;
-      }
-
-      .changelog-item::before {
-        content: "";
-        position: absolute;
-        left: -2rem;
-        top: 0.5rem;
-        width: 1rem;
-        height: 1rem;
-        border-radius: 50%;
-        background: var(--primary);
-        border: 2px solid var(--background);
-      }
-
-      .changelog-date {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        font-family: var(--font-mono);
-        margin-bottom: 0.25rem;
-      }
-
-      .changelog-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--foreground);
-        margin-bottom: 0.25rem;
-      }
-
-      .changelog-desc {
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-      }
-
-      .changelog-badge {
-        display: inline-block;
-        padding: 0.125rem 0.5rem;
-        font-size: 0.625rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        border-radius: 0.25rem;
-        margin-left: 0.5rem;
-      }
-
-      .changelog-badge--new { background: #dcfce7; color: #166534; }
-      .changelog-badge--improved { background: #dbeafe; color: #1e40af; }
-      .changelog-badge--fixed { background: #fef3c7; color: #92400e; }
-      .changelog-badge--deprecated { background: #fee2e2; color: #991b1b; }
-
-      /* ============================================
-         STATUS PAGE
-         ============================================ */
-      .status-dashboard {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .status-hero {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .status-indicator {
-        width: 1rem;
-        height: 1rem;
-        border-radius: 50%;
-        background: #22c55e;
-      }
-
-      .status-hero--operational .status-indicator {
-        background: #22c55e;
-      }
-
-      .status-message {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--foreground);
-      }
-
-      .status-services {
-        display: grid;
-        gap: 0.75rem;
-      }
-
-      .status-service {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.75rem 1rem;
-        background: var(--muted);
-        border-radius: 0.5rem;
-      }
-
-      .status-service-name {
-        font-weight: 500;
-        color: var(--foreground);
-      }
-
-      .status-service-badge {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-weight: 500;
-      }
-
-      .status-service-badge--up {
-        background: #dcfce7;
-        color: #166534;
-      }
-
-      .incident-item {
-        padding: 0.75rem;
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        margin-top: 0.5rem;
-        background: var(--card);
-      }
-
-      .incident-title {
-        font-weight: 600;
-        color: var(--foreground);
-        margin-bottom: 0.25rem;
-      }
-
-      .incident-desc {
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-      }
-
-      .incident-time {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        font-family: var(--font-mono);
-      }
-
-      /* ============================================
-         BREADCRUMB NAVIGATION
-         ============================================ */
-      .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        margin: 1rem 0;
-        flex-wrap: wrap;
-      }
-
-      .breadcrumb-item {
-        color: var(--muted-foreground);
-        text-decoration: none;
-        transition: color 0.15s ease;
-      }
-
-      .breadcrumb-item:hover {
-        color: var(--primary);
-      }
-
-      .breadcrumb-item--current {
-        color: var(--foreground);
-        font-weight: 500;
-      }
-
-      .breadcrumb-sep {
-        color: var(--muted-foreground);
-        font-size: 0.75rem;
-      }
-
-      .breadcrumb-icon {
-        margin-right: 0.25rem;
-      }
-
-      /* ============================================
-         TABLE OF CONTENTS
-         ============================================ */
-      .toc-container {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 1rem;
-        margin: 1rem 0;
-      }
-
-      .toc-header {
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--muted-foreground);
-        margin-bottom: 0.75rem;
-      }
-
-      .toc-nav {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .toc-item {
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-        text-decoration: none;
-        padding: 0.25rem 0;
-        border-left: 2px solid transparent;
-        padding-left: 0.75rem;
-        transition: all 0.15s ease;
-      }
-
-      .toc-item:hover {
-        color: var(--foreground);
-        border-left-color: var(--border);
-      }
-
-      .toc-item--active {
-        color: var(--primary);
-        border-left-color: var(--primary);
-        font-weight: 500;
-      }
-
-      .toc-item--nested {
-        padding-left: 1.5rem;
-        font-size: 0.8125rem;
-      }
-
-      .toc-item--nested-2 {
-        padding-left: 2.25rem;
-        font-size: 0.75rem;
-      }
-
-      /* ============================================
-         PREV/NEXT NAVIGATION
-         ============================================ */
-      .prev-next {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin: 2rem 0;
-      }
-
-      .prev-next-item {
-        display: flex;
-        flex-direction: column;
-        padding: 1rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        text-decoration: none;
-        transition: all 0.2s ease;
-      }
-
-      .prev-next-item:hover {
-        border-color: var(--primary);
-        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
-      }
-
-      .prev-next-item--empty {
-        opacity: 0.5;
-        pointer-events: none;
-      }
-
-      .prev-next-label {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.25rem;
-      }
-
-      .prev-next-title {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--foreground);
-      }
-
-      .prev-next-desc {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        margin-top: 0.25rem;
-      }
-
-      .prev-next-item--next {
-        text-align: right;
-      }
-
-      /* ============================================
-         VIDEO TUTORIALS
-         ============================================ */
-      .video-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .video-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        overflow: hidden;
-        transition: all 0.2s ease;
-      }
-
-      .video-card:hover {
-        border-color: var(--primary);
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
-        transform: translateY(-2px);
-      }
-
-      .video-thumbnail {
-        position: relative;
-        aspect-ratio: 16/9;
-        background: var(--muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .video-thumbnail::after {
-        content: "▶";
-        font-size: 2rem;
-        color: white;
-        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      }
-
-      .video-duration {
-        position: absolute;
-        bottom: 0.5rem;
-        right: 0.5rem;
-        background: rgba(0,0,0,0.75);
-        color: white;
-        font-size: 0.75rem;
-        padding: 0.125rem 0.375rem;
-        border-radius: 0.25rem;
-        font-family: var(--font-mono);
-      }
-
-/* ============================================
-         FEEDBACK COMPONENT
-         ============================================ */
-      .feedback-icon {
-        font-size: 1.25rem;
-      }
-
-      .feedback-message {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-      }
-
-      .feedback-textarea {
-        width: 100%;
-        min-height: 80px;
-        padding: 0.75rem;
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        font-family: var(--font-sans);
-        resize: vertical;
-        margin: 0.75rem 0;
-      }
-
-      .feedback-textarea:focus {
-        outline: none;
-        border-color: var(--primary);
-      }
-
-      .feedback-submit {
-        padding: 0.5rem 1rem;
-        background: var(--primary);
-        color: var(--primary-foreground);
-        border: none;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: opacity 0.2s ease;
-      }
-
-      .feedback-submit:hover {
-        opacity: 0.9;
-      }
-
-      /* Support links section */
-      .support-links {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin: 1.5rem 0;
-      }
-
-      .support-link {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        text-decoration: none;
-        transition: all 0.2s ease;
-      }
-
-      .support-link:hover {
-        border-color: var(--primary);
-        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
-      }
-
-      .support-icon {
-        font-size: 1.5rem;
-      }
-
-      .support-content {
-        flex: 1;
-      }
-
-      .support-content strong {
-        display: block;
-        color: var(--foreground);
-        font-size: 0.875rem;
-        margin-bottom: 0.25rem;
-      }
-
-      .support-content span {
-        color: var(--muted-foreground);
-        font-size: 0.75rem;
-      }
-
-      /* ============================================
-         UPDATE LINKS
-         ============================================ */
-      .update-links {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1rem;
-        margin: 1.5rem 0;
-      }
-
-      .update-card {
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1.25rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-      }
-
-      .update-icon {
-        font-size: 1.5rem;
-        flex-shrink: 0;
-      }
-
-      .update-content {
-        flex: 1;
-      }
-
-      .update-content strong {
-        display: block;
-        color: var(--foreground);
-        font-size: 0.875rem;
-        margin-bottom: 0.25rem;
-      }
-
-      .update-content span {
-        display: block;
-        color: var(--muted-foreground);
-        font-size: 0.75rem;
-        margin-bottom: 0.75rem;
-      }
-
-      .update-link {
-        color: var(--primary);
-        font-size: 0.8125rem;
-        font-weight: 500;
-        text-decoration: none;
-      }
-
-      .update-link:hover {
-        text-decoration: underline;
-      }
-
-      /* ============================================
-         CONTACT CARDS
-         ============================================ */
-      .contact-options {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .contact-card {
-        padding: 1.5rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        text-align: center;
-      }
-
-      .contact-card--pro {
-        border-color: var(--primary);
-        position: relative;
-      }
-
-      .contact-card--pro::before {
-        content: "POPULAR";
-        position: absolute;
-        top: -0.75rem;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--primary);
-        color: white;
-        font-size: 0.625rem;
-        font-weight: 600;
-        padding: 0.125rem 0.5rem;
-        border-radius: 0.25rem;
-      }
-
-      .contact-card--enterprise {
-        background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
-        border-color: transparent;
-      }
-
-      .contact-card--enterprise .contact-tier,
-      .contact-card--enterprise .contact-price,
-      .contact-card--enterprise .contact-feature {
-        color: white;
-      }
-
-      .contact-header {
-        margin-bottom: 1rem;
-      }
-
-      .contact-tier {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--foreground);
-      }
-
-      .contact-price {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin-top: 0.25rem;
-      }
-
-      .contact-features {
-        text-align: left;
-        margin-bottom: 1.5rem;
-      }
-
-      .contact-feature {
-        padding: 0.5rem 0;
-        color: var(--muted-foreground);
-        font-size: 0.875rem;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .contact-feature:last-child {
-        border-bottom: none;
-      }
-
-      /* ============================================
-         STATUS PAGE ENHANCEMENTS
-         ============================================ */
-      .status-time {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        font-family: var(--font-mono);
-        margin-left: auto;
-      }
-
-      .status-service-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-      }
-
-      .status-service-bar {
-        height: 8px;
-        background: var(--muted);
-        border-radius: 4px;
-        overflow: hidden;
-        margin-bottom: 0.5rem;
-      }
-
-      .status-service-fill {
-        height: 100%;
-        background: #22c55e;
-        border-radius: 4px;
-        transition: width 0.3s ease;
-      }
-
-      .status-service-meta {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        font-family: var(--font-mono);
-      }
-
-      .incident-item--resolved {
-        opacity: 0.7;
-      }
-
-      .incident-status {
-        display: inline-block;
-        padding: 0.125rem 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-        border-radius: 0.25rem;
-        background: #dcfce7;
-        color: #166534;
-      }
-
-      .incident-item--resolved .incident-status {
-        background: #fef3c7;
-        color: #92400e;
-      }
-
-      .status-subscribe {
-        text-align: center;
-        padding: 1.5rem;
-        background: var(--muted);
-        border-radius: var(--radius);
-        margin-top: 1.5rem;
-      }
-
-      .status-subscribe p {
-        color: var(--muted-foreground);
-        margin-bottom: 1rem;
-      }
-
-      .status-subscribe-btns {
-        display: flex;
-        justify-content: center;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-      }
-
-      .status-subscribe-btn {
-        padding: 0.5rem 1rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        color: var(--foreground);
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .status-subscribe-btn:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-      }
-
-      /* ============================================
-         AUTH FLOW ENHANCEMENTS
-         ============================================ */
-      .auth-flow-content {
-        margin-top: 1rem;
-      }
-
-      /* ============================================
-         VERSION SELECTOR ENHANCEMENTS
-         ============================================ */
-      .version-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        font-size: 0.875rem;
-        color: var(--foreground);
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .version-btn:hover {
-        border-color: var(--primary);
-      }
-
-      .version-option {
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        transition: background 0.15s ease;
-      }
-
-      .version-option:hover {
-        background: var(--accent);
-      }
-
-      .version-option--active {
-        background: var(--primary);
-        color: var(--primary-foreground);
-      }
-
-      .version-option--link {
-        color: var(--primary);
-        font-weight: 500;
-      }
-
-      .version-tag {
-        padding: 0.125rem 0.375rem;
-        font-size: 0.625rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        border-radius: 0.25rem;
-        margin-left: 0.5rem;
-      }
-
-      .version-tag--new { background: #dcfce7; color: #166534; }
-      .version-tag--beta { background: #fef3c7; color: #92400e; }
-      .version-tag--deprecated { background: #fee2e2; color: #991b1b; }
-
-      .version-divider {
-        height: 1px;
-        background: var(--border);
-        margin: 0.75rem 0;
-      }
-
-      /* ============================================
-         SEARCH COMPONENT ENHANCEMENTS
-         ============================================ */
-      .search-input-wrapper--active {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-      }
-
-      .shortcuts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 0.75rem;
-        margin: 1rem 0;
-      }
-
-      .shortcut-desc {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        margin-top: 0.25rem;
-      }
-
-      .search-inline {
-        display: inline-flex;
-        align-items: center;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 0.375rem 0.75rem;
-        gap: 0.5rem;
-      }
-
-      .search-inline-icon {
-        color: var(--muted-foreground);
-      }
-
-      .search-inline-input {
-        background: none;
-        border: none;
-        outline: none;
-        font-size: 0.875rem;
-        color: var(--foreground);
-        width: 150px;
-      }
-
-      .search-inline-input::placeholder {
-        color: var(--muted-foreground);
-      }
-
-      /* ============================================
-         TIMELINE ENHANCEMENTS
-         ============================================ */
-      .timeline-content {
-        padding-left: 1rem;
-      }
-
-      .timeline-date {
-        font-size: 0.75rem;
-        color: var(--muted-foreground);
-        font-family: var(--font-mono);
-        margin-bottom: 0.25rem;
-      }
-
-      .timeline-marker--past::before {
-        content: "";
-        display: block;
-        width: 8px;
-        height: 8px;
-        background: #166534;
-        border-radius: 50%;
-      }
-
-      /* ============================================
-         CARD GRID ENHANCEMENTS
-         ============================================ */
-      .stat-card {
-        padding: 1.5rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        text-align: center;
-      }
-
-      .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--foreground);
-        margin-bottom: 0.25rem;
-      }
-
-      .stat-label {
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-      }
-
-      .feature-card-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .feature-card-image {
-        width: 100%;
-        aspect-ratio: 16/9;
-        background: var(--muted);
-        border-radius: var(--radius);
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-      }
-
-      .feature-card-content {
-        flex: 1;
-      }
-
-      /* ============================================
-         PROGRESS INDICATORS ENHANCEMENTS
-         ============================================ */
-      .step-progress {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin: 2rem 0;
-        position: relative;
-      }
-
-      .step-progress::before {
-        content: "";
-        position: absolute;
-        top: 1rem;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--border);
-        z-index: 0;
-      }
-
-      .step-progress-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 1;
-        flex: 1;
-        max-width: 100px;
-      }
-
-      .step-progress-marker {
-        width: 2rem;
-        height: 2rem;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        background: var(--muted);
-        color: var(--muted-foreground);
-        border: 2px solid var(--border);
-      }
-
-      .step-progress-item--completed .step-progress-marker {
-        background: #166534;
-        color: white;
-        border-color: #166534;
-      }
-
-      .step-progress-item--active .step-progress-marker {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-        animation: pulse 2s ease-in-out infinite;
-      }
-
-      .step-progress-label {
-        font-size: 0.75rem;
-        text-align: center;
-        color: var(--muted-foreground);
-      }
-
-      /* ============================================
-         BADGES AND TAGS ENHANCEMENTS
-         ============================================ */
-      .badge--default {
-        background: var(--muted);
-        color: var(--foreground);
-      }
-
-      .badge--md {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-      }
-
-      .badge--icon {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-      }
-
-      .tag-showcase {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        padding: 1rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-      }
-
-      .method-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        border-radius: 0.25rem;
-        font-family: var(--font-mono);
-      }
-
-      .method-badge--get { background: #dcfce7; color: #166534; }
-      .method-badge--post { background: #dbeafe; color: #1e40af; }
-      .method-badge--put { background: #fef3c7; color: #92400e; }
-      .method-badge--patch { background: #f3e8ff; color: #6b21a8; }
-      .method-badge--delete { background: #fee2e2; color: #991b1b; }
-
-      .dark .method-badge--get { background: #166534; color: #dcfce7; }
-      .dark .method-badge--post { background: #1e40af; color: #dbeafe; }
-      .dark .method-badge--put { background: #92400e; color: #fef3c7; }
-      .dark .method-badge--patch { background: #6b21a8; color: #f3e8ff; }
-      .dark .method-badge--delete { background: #991b1b; color: #fee2e2; }
-
-      .plan-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        border-radius: 9999px;
-      }
-
-      .plan-badge--free { background: var(--muted); color: var(--foreground); }
-      .plan-badge--pro { background: var(--primary); color: var(--primary-foreground); }
-      .plan-badge--enterprise { background: var(--foreground); color: var(--background); }
-
-      /* ============================================
-         ANNOUNCEMENT BAR ENHANCEMENTS
-         ============================================ */
-      .announcement-icon {
-        font-size: 1.25rem;
-        flex-shrink: 0;
-      }
-
-      /* ============================================
-         IMAGE LIGHTBOX ENHANCEMENTS
-         ============================================ */
-      .lightbox-container {
-        position: relative;
-      }
-
-      .lightbox-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 40px;
-        height: 40px;
-        background: rgba(0,0,0,0.5);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        font-size: 1.25rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s ease;
-      }
-
-      .lightbox-nav:hover {
-        background: rgba(0,0,0,0.8);
-      }
-
-      .lightbox-nav--prev { left: 1rem; }
-      .lightbox-nav--next { right: 1rem; }
-
-      .lightbox-placeholder--tall {
-        aspect-ratio: 3/4;
-      }
-
-      .lightbox-placeholder--small {
-        aspect-ratio: 1;
-      }
-
-      .lightbox-content--small {
-        max-width: 300px;
-      }
-
-      /* ============================================
-         INTEGRATION SHOWCASE ENHANCEMENTS
-         ============================================ */
-      .integration-cta {
-        margin-top: 2rem;
-        padding: 2rem;
-        background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
-        border-radius: var(--radius);
-        text-align: center;
-      }
-
-      .integration-cta-content {
-        color: white;
-      }
-
-      .integration-cta-content h3 {
-        color: white;
-        margin-bottom: 0.5rem;
-      }
-
-      .integration-cta-content p {
-        opacity: 0.9;
-        margin-bottom: 1rem;
-      }
-
-      .integration-cta-arrow {
-        font-size: 1.5rem;
-        margin-left: 0.5rem;
-      }
-
-      /* ============================================
-         SOCIAL PROOF ENHANCEMENTS
-         ============================================ */
-      .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .metric-card {
-        padding: 1.5rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        text-align: center;
-      }
-
-      .metric-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--foreground);
-        margin-bottom: 0.25rem;
-      }
-
-      .metric-label {
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-      }
-
-      .logo-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 1rem;
-        align-items: center;
-        margin: 1.5rem 0;
-      }
-
-      .logo-item {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        font-size: 1.5rem;
-        color: var(--muted-foreground);
-      }
-
-      .badge-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin: 1rem 0;
-      }
-
-      .integration-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0.375rem 0.75rem;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        font-size: 0.8125rem;
-      }
-
-      .integration-badge-icon {
-        font-size: 1rem;
-      }
-
     `,
+  },
+  site: {
+    logo: {
+      src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
+      alt: "Zu",
+      width: "48px",
+    },
+  },
+  navigation: [
+    {
+      type: "category",
+      label: "Documentation",
+      items: [
+        {
+          type: "category",
+          label: "Getting Started",
+          icon: "sparkles",
+          items: [
+            "/introduction",
+            "/auth/getting-started",
+            "/auth/oauth2"
+          ],
+        },
+        {
+          type: "category",
+          label: "Core Concepts",
+          icon: "book",
+          items: [
+            "/advanced/architecture",
+            "/advanced/rate-limiting",
+            "/advanced/webhooks",
+            "/advanced/errors"
+          ],
+        },
+        {
+          type: "category",
+          label: "E-Commerce",
+          icon: "shopping-cart",
+          items: [
+            "/ecommerce/products",
+            "/ecommerce/orders",
+            "/ecommerce/inventory",
+            {
+              type: "link",
+              label: "API Reference",
+              to: "/api/ecommerce",
+            },
+          ],
+        },
+        {
+          type: "category",
+          label: "Analytics",
+          icon: "bar-chart",
+          items: [
+            "/analytics/events",
+            "/analytics/funnels",
+            "/analytics/segments",
+            {
+              type: "link",
+              label: "API Reference",
+              to: "/api/analytics",
+            },
+          ],
+        },
+        {
+          type: "category",
+          label: "SDKs & Tools",
+          icon: "code",
+          items: [
+            "/sdks/react",
+            "/sdks/python",
+            "/sdks/cli"
+          ],
+        },
+        {
+          type: "category",
+          label: "Integrations",
+          icon: "plug",
+          items: [
+            "/integrations/webhooks",
+            "/integrations/analytics",
+            "/integrations/payment",
+            "/integrations/ecommerce"
+          ],
+        },
+        {
+          type: "category",
+          label: "Migration",
+          icon: "arrow-right",
+          items: [
+            "/migration/from-v1",
+            "/migration/from-stripe",
+            "/migration/from-shopify"
+          ],
+        },
+        {
+          type: "category",
+          label: "Best Practices",
+          icon: "shield",
+          items: [
+            "/best-practices/security",
+            "/best-practices/performance",
+            "/best-practices/reliability"
+          ],
+        },
+        {
+          type: "category",
+          label: "Tutorials",
+          icon: "sparkles",
+          items: [
+            "/tutorials/first-integration",
+            "/tutorials/webhook-handler",
+            "/tutorials/batch-processing"
+          ],
+        },
+        {
+          type: "category",
+          label: "Guides",
+          icon: "book",
+          items: [
+            "/guides/environments",
+            "/guides/error-handling",
+            "/guides/rate-limits"
+          ],
+        },
+        {
+          type: "category",
+          label: "Examples",
+          icon: "code",
+          items: [
+            "/examples/ecommerce-full-flow",
+            "/examples/analytics-implementation"
+          ],
+        },
+        {
+          type: "category",
+          label: "Components",
+          icon: "palette",
+items: [
+            "/components/feature-cards",
+            "/components/feature-checklist",
+            "/components/video-tutorials",
+            "/components/page-feedback",
+            "/components/community-links",
+            "/components/support-section",
+            "/components/changelog",
+            "/components/status-page",
+            "/components/rate-limit-indicator",
+            "/components/auth-flows",
+            "/components/prev-next-nav",
+            "/components/version-selector",
+            "/components/api-parameter-table",
+            "/components/search-component",
+            "/components/alert-banner",
+            "/components/announcement-bar",
+            "/components/sidebar-navigation",
+            "/components/timeline",
+            "/components/card-grid",
+            "/components/progress-indicators",
+            "/components/badges-tags",
+            "/components/callout-box",
+            "/components/image-lightbox",
+          ],
+        },
+      ],
+    },
+    {
+      type: "link",
+      to: "/api/ecommerce",
+      label: "API Reference",
+    },
+  ],
+  redirects: [{ from: "/", to: "/introduction" }],
+  apis: [
+    {
+      type: "file",
+      input: "./apis/openapi.yaml",
+      path: "/api",
+    },
+    {
+      type: "file",
+      input: "./apis/ecommerce.yaml",
+      path: "/api/ecommerce",
+    },
+    {
+      type: "file",
+      input: "./apis/analytics.yaml",
+      path: "/api/analytics",
+    },
+    {
+      type: "file",
+      input: "./apis/auth.yaml",
+      path: "/api/auth",
+    },
+  ],
+  // search: { type: "inkeep", options: { apiKey: "...", integrationId: "...", organizationId: "..." } },
+  metadata: {
+    title: "Zu Developer Portal",
+    description: "API documentation and reference for Zu ΓÇö the next-generation developer platform for e-commerce, analytics, and auth.",
+  },
+  syntaxHighlighting: {
+    languages: [...defaultLanguages, "http"],
+    themes: {
+      light: "min-light",
+      dark: "vitesse-dark",
+    },
   },
 };
 
 export default config;
+
