@@ -1,4 +1,5 @@
 import { defaultLanguages, type ZudokuConfig } from "zudoku";
+import "./public/components.css";
 
 const config: ZudokuConfig = {
   theme: {
