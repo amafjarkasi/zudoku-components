@@ -1,0 +1,283 @@
+---
+title: Callout Component
+description: Styled callout and highlight boxes
+---
+
+# Callout Component
+
+Styled callout boxes for important information.
+
+## Callout Types
+
+<div class="callout callout--info">
+  <div class="callout-header">
+    <span class="callout-icon">ℹ️</span>
+    <strong>Info</strong>
+  </div>
+  <div class="callout-body">
+    This is an informational message for the user.
+  </div>
+</div>
+
+<div class="callout callout--tip">
+  <div class="callout-header">
+    <span class="callout-icon">💡</span>
+    <strong>Tip</strong>
+  </div>
+  <div class="callout-body">
+    Here's a helpful suggestion to improve your implementation.
+  </div>
+</div>
+
+<div class="callout callout--warning">
+  <div class="callout-header">
+    <span class="callout-icon">⚠️</span>
+    <strong>Warning</strong>
+  </div>
+  <div class="callout-body">
+    Be careful with this step - it may have unintended consequences.
+  </div>
+</div>
+
+<div class="callout callout--caution">
+  <div class="callout-header">
+    <span class="callout-icon">🔔</span>
+    <strong>Caution</strong>
+  </div>
+  <div class="callout-body">
+    This action cannot be easily undone.
+  </div>
+</div>
+
+<div class="callout callout--danger">
+  <div class="callout-header">
+    <span class="callout-icon">🚨</span>
+    <strong>Danger</strong>
+  </div>
+  <div class="callout-body">
+    This action may cause data loss or security issues.
+  </div>
+</div>
+
+## With Code
+
+<div class="callout callout--info">
+  <div class="callout-header">
+    <span class="callout-icon">ℹ️</span>
+    <strong>Note</strong>
+  </div>
+  <div class="callout-body">
+    <p>You can verify your API key is working:</p>
+    <pre><code>curl -H "Authorization: Bearer $ZU_API_KEY" https://api.zu.com/v1/ping</code></pre>
+  </div>
+</div>
+
+## With List
+
+<div class="callout callout--tip">
+  <div class="callout-header">
+    <span class="callout-icon">💡</span>
+    <strong>Best Practices</strong>
+  </div>
+  <div class="callout-body">
+    <ul>
+      <li>Store API keys in environment variables</li>
+      <li>Never commit keys to version control</li>
+      <li>Rotate keys regularly</li>
+    </ul>
+  </div>
+</div>
+
+## Collapsible Callout
+
+<div class="callout callout--info callout--collapsible">
+  <div class="callout-header">
+    <span class="callout-icon">ℹ️</span>
+    <strong>Additional Details</strong>
+    <span class="callout-toggle">▼</span>
+  </div>
+  <div class="callout-body">
+    This section contains more detailed information that is hidden by default. Click to expand.
+  </div>
+</div>
+
+<style>{`
+  .callout {
+    border: 1px solid;
+    border-radius: var(--radius);
+    margin: 1.5rem 0;
+    overflow: hidden;
+  }
+
+  .callout-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid;
+  }
+
+  .callout-icon {
+    font-size: 1rem;
+  }
+
+  .callout-body {
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .callout-body p {
+    margin: 0 0 0.75rem 0;
+  }
+
+  .callout-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .callout-body ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  .callout-body pre {
+    margin: 0.75rem 0 0 0;
+    padding: 0.75rem;
+    background: var(--muted);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+
+  .callout-body pre code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .callout--info {
+    border-color: #1e40af;
+    background: #dbeafe;
+  }
+
+  .dark .callout--info {
+    background: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  .callout--info .callout-header {
+    background: rgba(30, 64, 175, 0.1);
+    border-color: inherit;
+    color: #1e40af;
+  }
+
+  .dark .callout--info .callout-header {
+    background: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+  }
+
+  .callout--tip {
+    border-color: #166534;
+    background: #dcfce7;
+  }
+
+  .dark .callout--tip {
+    background: #14532d;
+    border-color: #22c55e;
+  }
+
+  .callout--tip .callout-header {
+    background: rgba(22, 101, 52, 0.1);
+    border-color: inherit;
+    color: #166534;
+  }
+
+  .dark .callout--tip .callout-header {
+    background: rgba(34, 197, 94, 0.1);
+    color: #86efac;
+  }
+
+  .callout--warning {
+    border-color: #92400e;
+    background: #fef3c7;
+  }
+
+  .dark .callout--warning {
+    background: #5c3d0a;
+    border-color: #f59e0b;
+  }
+
+  .callout--warning .callout-header {
+    background: rgba(146, 64, 14, 0.1);
+    border-color: inherit;
+    color: #92400e;
+  }
+
+  .dark .callout--warning .callout-header {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fde047;
+  }
+
+  .callout--caution {
+    border-color: #a16207;
+    background: #fef9c3;
+  }
+
+  .dark .callout--caution {
+    background: #422006;
+    border-color: #ca8a04;
+  }
+
+  .callout--caution .callout-header {
+    background: rgba(161, 98, 7, 0.1);
+    border-color: inherit;
+    color: #a16207;
+  }
+
+  .dark .callout--caution .callout-header {
+    background: rgba(202, 138, 4, 0.1);
+    color: #fde047;
+  }
+
+  .callout--danger {
+    border-color: #991b1b;
+    background: #fee2e2;
+  }
+
+  .dark .callout--danger {
+    background: #450a0a;
+    border-color: #dc2626;
+  }
+
+  .callout--danger .callout-header {
+    background: rgba(153, 27, 27, 0.1);
+    border-color: inherit;
+    color: #991b1b;
+  }
+
+  .dark .callout--danger .callout-header {
+    background: rgba(220, 38, 38, 0.1);
+    color: #fca5a5;
+  }
+
+  .callout--collapsible .callout-header {
+    cursor: pointer;
+  }
+
+  .callout--collapsible .callout-toggle {
+    margin-left: auto;
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+  }
+
+  .callout--collapsible[open] .callout-toggle {
+    transform: rotate(180deg);
+  }
+
+  .callout--collapsible .callout-body {
+    display: none;
+  }
+
+  .callout--collapsible[open] .callout-body {
+    display: block;
+  }
+`}</style>

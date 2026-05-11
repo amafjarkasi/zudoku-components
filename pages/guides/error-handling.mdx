@@ -1,0 +1,891 @@
+---
+title: Error Handling Guide
+description: Comprehensive strategies for handling API errors, retries, and failure recovery
+---
+
+Robust error handling is essential for building reliable integrations. This guide covers the error types you'll encounter, strategies for handling them gracefully, and patterns for implementing retry logic with exponential backoff.
+
+## Error Response Structure
+
+All API errors follow a consistent structure:
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "message": "The request body contains invalid data",
+    "code": "invalid_field_value",
+    "details": {
+      "field": "price",
+      "value": "-10.00",
+      "reason": "Price must be a positive number"
+    },
+    "request_id": "req_abc123xyz789",
+    "timestamp": "2026-05-11T10:30:00Z",
+    "documentation_url": "https://docs.zephyr.com/errors/invalid_field_value"
+  }
+}
+```
+
+### Error Object Fields
+
+| Field               | Type   | Description                              |
+| ------------------- | ------ | ---------------------------------------- |
+| `type`              | string | Error category for programmatic handling |
+| `message`           | string | Human-readable error description         |
+| `code`              | string | Specific error code for error mapping    |
+| `details`           | object | Additional context about the error       |
+| `request_id`        | string | Unique ID for support and debugging      |
+| `timestamp`         | string | When the error occurred                  |
+| `documentation_url` | string | Link to error documentation              |
+
+## Error Types
+
+### 1. Authentication Errors (4xx: 401)
+
+```json
+{
+  "error": {
+    "type": "authentication_error",
+    "message": "Invalid API key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**Causes:**
+
+- Missing API key header
+- Invalid or malformed API key
+- API key has been revoked
+- API key doesn't match the environment
+
+**Handling:**
+
+```javascript
+// src/errors/auth-errors.js
+
+class AuthenticationError extends Error {
+  constructor(message, code = "authentication_error") {
+    super(message);
+    this.name = "AuthenticationError";
+    this.code = code;
+    this.statusCode = 401;
+  }
+}
+
+async function handleApiResponse(response) {
+  if (response.status === 401) {
+    const error = await response.json();
+
+    switch (error.error.code) {
+      case "invalid_api_key":
+        throw new AuthenticationError(
+          "Invalid API key. Please check your configuration.",
+          "invalid_api_key",
+        );
+
+      case "expired_api_key":
+        throw new AuthenticationError(
+          "API key has expired. Please generate a new one.",
+          "expired_api_key",
+        );
+
+      case "revoked_api_key":
+        throw new AuthenticationError(
+          "API key has been revoked. Please generate a new one.",
+          "revoked_api_key",
+        );
+
+      default:
+        throw new AuthenticationError(
+          error.error.message || "Authentication failed",
+          error.error.code,
+        );
+    }
+  }
+}
+```
+
+### 2. Authorization Errors (4xx: 403)
+
+```json
+{
+  "error": {
+    "type": "authorization_error",
+    "message": "Insufficient permissions",
+    "code": "insufficient_permissions",
+    "details": {
+      "required": ["orders:write"],
+      "granted": ["orders:read"]
+    }
+  }
+}
+```
+
+**Handling:**
+
+```javascript
+class AuthorizationError extends Error {
+  constructor(message, requiredPermissions, grantedPermissions) {
+    super(message);
+    this.name = "AuthorizationError";
+    this.requiredPermissions = requiredPermissions;
+    this.grantedPermissions = grantedPermissions;
+    this.statusCode = 403;
+  }
+}
+
+// Check permissions before making requests
+function validatePermissions(required, granted) {
+  const missing = required.filter((p) => !granted.includes(p));
+
+  if (missing.length > 0) {
+    throw new AuthorizationError(
+      `Missing required permissions: ${missing.join(", ")}`,
+      required,
+      granted,
+    );
+  }
+}
+```
+
+### 3. Validation Errors (4xx: 400)
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "message": "Request validation failed",
+    "code": "invalid_request",
+    "details": {
+      "errors": [
+        {
+          "field": "email",
+          "value": "not-an-email",
+          "message": "Invalid email format"
+        },
+        {
+          "field": "price",
+          "value": "-10.00",
+          "message": "Price must be positive"
+        }
+      ]
+    }
+  }
+}
+```
+
+**Handling:**
+
+```javascript
+class ValidationError extends Error {
+  constructor(errors) {
+    super("Request validation failed");
+    this.name = "ValidationError";
+    this.errors = errors;
+    this.statusCode = 400;
+  }
+
+  /**
+   * Get formatted error messages
+   */
+  getMessages() {
+    return this.errors.map((e) => `${e.field}: ${e.message}`).join("; ");
+  }
+}
+
+async function handleValidation(response) {
+  if (response.status === 400) {
+    const error = await response.json();
+
+    if (error.error.code === "invalid_request") {
+      const validationErrors = error.error.details?.errors || [];
+      throw new ValidationError(validationErrors);
+    }
+  }
+}
+```
+
+### 4. Not Found Errors (4xx: 404)
+
+```json
+{
+  "error": {
+    "type": "not_found_error",
+    "message": "Resource not found",
+    "code": "order_not_found",
+    "details": {
+      "resource_type": "order",
+      "resource_id": "ord_nonexistent123"
+    }
+  }
+}
+```
+
+**Handling:**
+
+```javascript
+class NotFoundError extends Error {
+  constructor(resourceType, resourceId) {
+    super(`${resourceType} not found: ${resourceId}`);
+    this.name = "NotFoundError";
+    this.resourceType = resourceType;
+    this.resourceId = resourceId;
+    this.statusCode = 404;
+  }
+}
+
+// Helper function for common pattern
+async function getOrFail(resourceType, id) {
+  const response = await client.get(`/${resourceType}s/${id}`);
+
+  if (response.status === 404) {
+    throw new NotFoundError(resourceType, id);
+  }
+
+  return response.json();
+}
+```
+
+### 5. Rate Limit Errors (4xx: 429)
+
+```json
+{
+  "error": {
+    "type": "rate_limit_error",
+    "message": "Rate limit exceeded",
+    "code": "rate_limit_exceeded",
+    "details": {
+      "limit": 100,
+      "remaining": 0,
+      "reset_at": "2026-05-11T10:31:00Z",
+      "retry_after": 60
+    }
+  }
+}
+```
+
+**Handling (see Rate Limits Guide for details):**
+
+```javascript
+class RateLimitError extends Error {
+  constructor(retryAfter, limit, resetAt) {
+    super(`Rate limit exceeded. Retry after ${retryAfter} seconds.`);
+    this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
+    this.limit = limit;
+    this.resetAt = new Date(resetAt);
+    this.statusCode = 429;
+  }
+}
+```
+
+### 6. Server Errors (5xx)
+
+```json
+{
+  "error": {
+    "type": "server_error",
+    "message": "An internal error occurred",
+    "code": "internal_error",
+    "request_id": "req_abc123xyz789"
+  }
+}
+```
+
+**Handling:**
+
+```javascript
+class ServerError extends Error {
+  constructor(message, requestId) {
+    super(message);
+    this.name = "ServerError";
+    this.requestId = requestId;
+    this.statusCode = 500;
+  }
+}
+
+// These errors are retryable
+function isRetryable(error) {
+  return error instanceof ServerError || error instanceof RateLimitError;
+}
+```
+
+## Error Handling Patterns
+
+### 1. Centralized Error Handler
+
+```javascript
+// src/errors/handler.js
+
+class ZephyrAPIError extends Error {
+  constructor(errorResponse, statusCode) {
+    super(errorResponse.message || "Unknown error");
+    this.name = "ZephyrAPIError";
+    this.statusCode = statusCode;
+    this.code = errorResponse.code;
+    this.type = errorResponse.type;
+    this.details = errorResponse.details;
+    this.requestId = errorResponse.request_id;
+  }
+}
+
+export async function handleResponse(response) {
+  const contentType = response.headers.get("content-type");
+
+  // Parse error response
+  if (!response.ok) {
+    let errorResponse = {};
+
+    if (contentType?.includes("application/json")) {
+      const data = await response.json();
+      errorResponse = data.error || data;
+    }
+
+    throw new ZephyrAPIError(errorResponse, response.status);
+  }
+
+  // Parse success response
+  if (contentType?.includes("application/json")) {
+    return response.json();
+  }
+
+  return response.text();
+}
+
+// Usage in client
+async function request(method, endpoint, body) {
+  const response = await fetch(url, options);
+  return handleResponse(response);
+}
+```
+
+### 2. Try-Catch with Error Mapping
+
+```javascript
+// src/errors/mappers.js
+
+export const errorHandlers = {
+  validation_error: (error) => {
+    const messages =
+      error.details?.errors
+        ?.map((e) => `${e.field}: ${e.message}`)
+        .join(", ") || error.message;
+
+    return {
+      userMessage: `Validation error: ${messages}`,
+      logLevel: "warn",
+      retry: false,
+    };
+  },
+
+  authentication_error: (error) => ({
+    userMessage: "Authentication failed. Please check your API key.",
+    logLevel: "error",
+    retry: false,
+    alert: true,
+  }),
+
+  rate_limit_exceeded: (error) => ({
+    userMessage: `Rate limit exceeded. Retry after ${error.details?.retry_after || 60}s.`,
+    logLevel: "warn",
+    retry: true,
+    retryAfter: error.details?.retry_after || 60,
+  }),
+
+  server_error: (error) => ({
+    userMessage: "Server error. Please try again later.",
+    logLevel: "error",
+    retry: true,
+    retryAfter: 5,
+  }),
+
+  network_error: (error) => ({
+    userMessage: "Network error. Please check your connection.",
+    logLevel: "error",
+    retry: true,
+    retryAfter: 2,
+  }),
+};
+
+export function getErrorHandler(error) {
+  const handler = errorHandlers[error.code] || errorHandlers.server_error;
+  return handler(error);
+}
+```
+
+### 3. Global Error Handler in Express
+
+```javascript
+// src/middleware/error-handler.js
+
+import { ZephyrAPIError } from "../errors/handler.js";
+import { getErrorHandler } from "../errors/mappers.js";
+
+export function errorHandler(err, req, res, next) {
+  // Log the error
+  console.error("Error:", {
+    message: err.message,
+    code: err.code,
+    requestId: err.requestId,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+
+  // Handle API errors
+  if (err instanceof ZephyrAPIError) {
+    const handler = getErrorHandler(err);
+
+    // Log based on severity
+    if (handler.alert) {
+      // Send alert to monitoring
+      monitoringService.alert({
+        type: "auth_error",
+        message: handler.userMessage,
+        requestId: err.requestId,
+      });
+    }
+
+    return res.status(err.statusCode).json({
+      error: {
+        message: handler.userMessage,
+        code: err.code,
+        request_id: err.requestId,
+      },
+      retry: handler.retry,
+      retry_after: handler.retryAfter,
+    });
+  }
+
+  // Handle validation errors
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      error: {
+        message: err.getMessages(),
+        code: "validation_error",
+        details: err.errors,
+      },
+    });
+  }
+
+  // Handle unknown errors
+  return res.status(500).json({
+    error: {
+      message: "An unexpected error occurred",
+      code: "internal_error",
+    },
+  });
+}
+```
+
+## Retry Logic
+
+### Exponential Backoff
+
+```javascript
+// src/retry/exponential-backoff.js
+
+/**
+ * Sleep for the specified milliseconds
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate delay with exponential backoff and jitter
+ * @param {number} attempt - Current attempt number (0-indexed)
+ * @param {object} options - Configuration options
+ */
+function calculateDelay(attempt, options = {}) {
+  const {
+    baseDelay = 1000, // 1 second
+    maxDelay = 60000, // 1 minute max
+    multiplier = 2, // Double delay each attempt
+    jitter = true, // Add randomness
+  } = options;
+
+  // Calculate exponential delay
+  const exponentialDelay = baseDelay * Math.pow(multiplier, attempt);
+
+  // Cap at max delay
+  const cappedDelay = Math.min(exponentialDelay, maxDelay);
+
+  // Add jitter (0-25% of delay)
+  if (jitter) {
+    const jitterAmount = cappedDelay * Math.random() * 0.25;
+    return Math.floor(cappedDelay + jitterAmount);
+  }
+
+  return Math.floor(cappedDelay);
+}
+
+/**
+ * Retry a function with exponential backoff
+ * @param {Function} fn - Async function to retry
+ * @param {object} options - Retry options
+ */
+async function withRetry(fn, options = {}) {
+  const {
+    maxAttempts = 3,
+    retryableCodes = ["rate_limit_exceeded", "server_error", "network_error"],
+    onRetry = null,
+    onFailure = null,
+  } = options;
+
+  let lastError;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Check if error is retryable
+      const isRetryable =
+        error instanceof ZephyrAPIError
+          ? retryableCodes.includes(error.code)
+          : error.code === "network_error" || !error.statusCode;
+
+      if (!isRetryable || attempt === maxAttempts - 1) {
+        // Non-retryable error or last attempt
+        if (onFailure) {
+          await onFailure(error, attempt);
+        }
+        throw error;
+      }
+
+      // Calculate delay
+      const delay =
+        error instanceof ZephyrAPIError && error.details?.retry_after
+          ? error.details.retry_after * 1000 // Use server-provided delay
+          : calculateDelay(attempt);
+
+      // Call retry callback
+      if (onRetry) {
+        await onRetry(error, attempt, delay);
+      }
+
+      // Wait before retry
+      console.log(
+        `Retrying after ${delay}ms (attempt ${attempt + 1}/${maxAttempts})`,
+      );
+      await sleep(delay);
+    }
+  }
+
+  throw lastError;
+}
+```
+
+### Retry Decorator
+
+```javascript
+// src/retry/decorators.js
+
+/**
+ * Decorator for adding retry logic to class methods
+ */
+function retryable(options = {}) {
+  return function (target, name, descriptor) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (...args) {
+      return withRetry(() => originalMethod.apply(this, args), options);
+    };
+
+    return descriptor;
+  };
+}
+
+/**
+ * Usage with retry decorator
+ */
+class ProductService {
+  @retryable({
+    maxAttempts: 3,
+    retryableCodes: ["rate_limit_exceeded", "server_error"],
+    onRetry: (error, attempt, delay) => {
+      console.log(`Retrying product fetch after ${delay}ms`);
+    },
+  })
+  async getProduct(productId) {
+    return client.get(`/products/${productId}`);
+  }
+
+  @retryable({
+    maxAttempts: 5,
+    retryableCodes: ["rate_limit_exceeded"],
+    onRetry: (error, attempt, delay) => {
+      metrics.increment("product_fetch_retries");
+    },
+  })
+  async listProducts(params) {
+    return client.get("/products", params);
+  }
+}
+```
+
+### Circuit Breaker Pattern
+
+```javascript
+// src/retry/circuit-breaker.js
+
+class CircuitBreaker {
+  constructor(options = {}) {
+    this.failureThreshold = options.failureThreshold || 5;
+    this.resetTimeout = options.resetTimeout || 60000; // 1 minute
+    this.halfOpenMaxCalls = options.halfOpenMaxCalls || 3;
+
+    this.state = "closed"; // closed, open, half-open
+    this.failures = 0;
+    this.lastFailureTime = null;
+    this.halfOpenCalls = 0;
+  }
+
+  /**
+   * Execute a function with circuit breaker protection
+   */
+  async execute(fn) {
+    if (this.state === "open") {
+      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        this.state = "half-open";
+        this.halfOpenCalls = 0;
+        console.log("Circuit breaker: OPEN -> HALF-OPEN");
+      } else {
+        throw new Error("Circuit breaker is open");
+      }
+    }
+
+    try {
+      const result = await fn();
+
+      if (this.state === "half-open") {
+        this.halfOpenCalls++;
+        if (this.halfOpenCalls >= this.halfOpenMaxCalls) {
+          this.state = "closed";
+          this.failures = 0;
+          console.log("Circuit breaker: HALF-OPEN -> CLOSED");
+        }
+      }
+
+      return result;
+    } catch (error) {
+      this.failures++;
+      this.lastFailureTime = Date.now();
+
+      if (this.state === "half-open") {
+        this.state = "open";
+        console.log("Circuit breaker: HALF-OPEN -> OPEN");
+      } else if (this.failures >= this.failureThreshold) {
+        this.state = "open";
+        console.log("Circuit breaker: CLOSED -> OPEN");
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Get circuit breaker status
+   */
+  getStatus() {
+    return {
+      state: this.state,
+      failures: this.failures,
+      lastFailure: this.lastFailureTime,
+    };
+  }
+}
+
+// Usage
+const productCircuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeout: 60000,
+});
+
+async function getProduct(productId) {
+  return productCircuitBreaker.execute(() =>
+    client.get(`/products/${productId}`),
+  );
+}
+```
+
+## Error Recovery Strategies
+
+### 1. Fallback to Cached Data
+
+```javascript
+// src/recovery/cached-fallback.js
+
+class CachedFallbackService {
+  constructor(cache, client) {
+    this.cache = cache;
+    this.client = client;
+  }
+
+  /**
+   * Get data with fallback to cache on failure
+   */
+  async getWithFallback(key, fetchFn, options = {}) {
+    const { cacheTTL = 300, staleFallback = true } = options;
+
+    try {
+      // Try to fetch fresh data
+      const data = await fetchFn();
+      this.cache.set(key, { data, timestamp: Date.now() });
+      return data;
+    } catch (error) {
+      console.error(`Fetch failed for ${key}:`, error.message);
+
+      // Try to return cached data
+      const cached = this.cache.get(key);
+
+      if (cached) {
+        const age = (Date.now() - cached.timestamp) / 1000;
+
+        if (age < cacheTTL || staleFallback) {
+          console.log(`Returning stale cached data for ${key} (age: ${age}s)`);
+          return cached.data;
+        }
+      }
+
+      // No cache available, re-throw error
+      throw error;
+    }
+  }
+}
+
+// Usage
+const productService = new CachedFallbackService(productCache, client);
+
+const product = await productService.getWithFallback(
+  `product:${productId}`,
+  () => client.get(`/products/${productId}`),
+  { cacheTTL: 300, staleFallback: true },
+);
+```
+
+### 2. Queue for Later Processing
+
+```javascript
+// src/recovery/queue.js
+
+class FailedRequestQueue {
+  constructor(redis, options = {}) {
+    this.redis = redis;
+    this.queueName = options.queueName || "failed_requests";
+    this.maxRetries = options.maxRetries || 5;
+  }
+
+  /**
+   * Add a failed request to the queue for retry
+   */
+  async enqueue(request) {
+    const entry = {
+      request,
+      attempts: (request.attempts || 0) + 1,
+      firstFailed: request.firstFailed || Date.now(),
+      lastFailed: Date.now(),
+    };
+
+    await this.redis.lpush(this.queueName, JSON.stringify(entry));
+
+    console.log(`Queued failed request for retry (attempt ${entry.attempts})`);
+  }
+
+  /**
+   * Process queued requests
+   */
+  async processQueue(processFn) {
+    while (true) {
+      const entry = await this.redis.rpop(this.queueName);
+
+      if (!entry) break;
+
+      const { request } = JSON.parse(entry);
+
+      if (request.attempts >= this.maxRetries) {
+        console.log(
+          `Max retries reached for request, moving to dead letter queue`,
+        );
+        await this.redis.lpush(`${this.queueName}:dlq`, entry);
+        continue;
+      }
+
+      try {
+        await processFn(request);
+        console.log(`Successfully processed queued request`);
+      } catch (error) {
+        await this.enqueue(request);
+      }
+    }
+  }
+}
+```
+
+## Logging and Monitoring
+
+### Structured Error Logging
+
+```javascript
+// src/logging/error-logger.js
+
+export function logError(error, context = {}) {
+  const errorLog = {
+    timestamp: new Date().toISOString(),
+    level: "error",
+    message: error.message,
+    code: error.code,
+    type: error.type,
+    statusCode: error.statusCode,
+    requestId: error.requestId,
+    stack: error.stack,
+    context,
+  };
+
+  // Log to console in development
+  if (process.env.NODE_ENV === "development") {
+    console.error(JSON.stringify(errorLog, null, 2));
+  }
+
+  // Send to error tracking service in production
+  if (process.env.NODE_ENV === "production") {
+    errorTracker.capture(errorLog);
+  }
+
+  return errorLog;
+}
+```
+
+## Best Practices
+
+<Callout type="tip">**Error Handling Best Practices:**</Callout>
+
+1. **Always handle errors explicitly** - Don't let errors propagate silently
+2. **Log with context** - Include request IDs and relevant data
+3. **Use appropriate retry logic** - Only retry transient failures
+4. **Implement circuit breakers** - Prevent cascade failures
+5. **Provide user-friendly messages** - Hide internal details in client responses
+6. **Monitor error rates** - Set up alerts for abnormal patterns
+7. **Test error paths** - Include error scenarios in your tests
+
+## Common Error Codes Reference
+
+| Code                       | Type           | Retryable | Cause                       |
+| -------------------------- | -------------- | --------- | --------------------------- |
+| `invalid_api_key`          | Authentication | No        | Invalid or revoked key      |
+| `insufficient_permissions` | Authorization  | No        | Missing scope/permission    |
+| `validation_error`         | Validation     | No        | Invalid request data        |
+| `resource_not_found`       | Not Found      | No        | Resource doesn't exist      |
+| `rate_limit_exceeded`      | Rate Limit     | Yes       | Too many requests           |
+| `server_error`             | Server         | Yes       | Internal API error          |
+| `service_unavailable`      | Server         | Yes       | API temporarily unavailable |
+| `timeout`                  | Network        | Yes       | Request timed out           |
+
+## Next Steps
+
+- [Rate Limits Guide](/guides/rate-limits) - Handle rate limits effectively
+- [First Integration Tutorial](/tutorials/first-integration) - Build your first integration
+- [Webhook Handler Tutorial](/tutorials/webhook-handler) - Handle webhook errors
+- [Batch Processing Tutorial](/tutorials/batch-processing) - Handle batch operation failures

@@ -1,0 +1,60 @@
+---
+title: React SDK
+---
+
+
+Our official React SDK provides hooks and components to rapidly integrate our platform into your modern frontend applications. It is fully typed with TypeScript and handles complex logic like token refresh, caching, and optimistic UI updates automatically.
+
+## Installation
+
+Install the package via npm, yarn, or pnpm:
+
+```bash
+npm install @premium-api/react-sdk
+```
+
+## Setup
+
+Wrap your application in the `PremiumApiProvider` and initialize it with your public Client ID. 
+
+<Callout type="info">
+  Only use your **Public Client ID** in frontend code. Never expose your Secret Key in the browser!
+</Callout>
+
+```tsx
+import { PremiumApiProvider } from '@premium-api/react-sdk';
+
+function App() {
+  return (
+    <PremiumApiProvider clientId="pub_12345">
+      <YourApp />
+    </PremiumApiProvider>
+  );
+}
+```
+
+## Using Hooks
+
+Once configured, you can use our typed hooks anywhere in your application:
+
+```tsx
+import { useProducts, useCart } from '@premium-api/react-sdk';
+
+function ProductList() {
+  const { data: products, isLoading } = useProducts();
+  const { addToCart } = useCart();
+
+  if (isLoading) return <div>Loading products...</div>;
+
+  return (
+    <div className="grid">
+      {products.map(product => (
+        <div key={product.id}>
+          <h3>{product.name}</h3>
+          <button onClick={() => addToCart(product.id)}>Add to Cart</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```

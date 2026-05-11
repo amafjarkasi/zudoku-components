@@ -1,0 +1,218 @@
+---
+title: Funnels
+---
+
+
+Understand where users drop off in conversion flows with our funnel analysis engine. Visualize user journeys, identify bottlenecks, and optimize for higher conversion rates.
+
+## Creating a Funnel
+
+### Basic Funnel
+
+```typescript
+const funnel = await client.analytics.funnel({
+  steps: [
+    { event: "page_view", name: "Landing" },
+    { event: "product_viewed", name: "Product View" },
+    { event: "checkout_started", name: "Checkout Started" },
+    { event: "purchase_completed", name: "Purchase" }
+  ],
+  date_range: { start: "2026-04-01", end: "2026-04-30" }
+});
+```
+
+### Funnel Response
+
+```json
+{
+  "funnel_id": "fun_abc123",
+  "steps": [
+    {
+      "name": "Landing",
+      "event": "page_view",
+      "users_entered": 45000,
+      "conversion_rate": 100.0
+    },
+    {
+      "name": "Product View",
+      "event": "product_viewed",
+      "users_entered": 28500,
+      "conversion_rate": 63.3,
+      "drop_off": 16500
+    },
+    {
+      "name": "Checkout Started",
+      "event": "checkout_started",
+      "users_entered": 12000,
+      "conversion_rate": 42.1,
+      "drop_off": 16500
+    },
+    {
+      "name": "Purchase",
+      "event": "purchase_completed",
+      "users_entered": 5400,
+      "conversion_rate": 45.0,
+      "drop_off": 6600
+    }
+  ],
+  "overall_conversion_rate": 12.0
+}
+```
+
+## Advanced Funnel Options
+
+### Sequential Events
+
+Track when users perform events in a specific order:
+
+```typescript
+const funnel = await client.analytics.funnel({
+  steps: [
+    { event: "page_view", name: "Landing", properties: { page: "/products" } },
+    { event: "add_to_cart", name: "Added to Cart", strict_order: true },
+    { event: "checkout_started", name: "Checkout" }
+  ],
+  strict_order: true  // User must complete each step before next
+});
+```
+
+### With Conditions
+
+Add conditions to filter when steps apply:
+
+```typescript
+const funnel = await client.analytics.funnel({
+  steps: [
+    { event: "page_view", name: "Landing" },
+    {
+      event: "purchase_completed",
+      name: "Purchase",
+      conditions: { properties: { revenue: { greater_than: 50 } } }
+    }
+  ],
+  grouping: ["traffic_source", "device_type"]
+});
+```
+
+## Funnel Visualization
+
+### Conversion Paths
+
+| Metric | Description |
+|---|---|
+| **Total Users** | Unique users who entered the funnel |
+| **Step Conversion** | Percentage moving to next step |
+| **Drop-off Rate** | Users leaving at each step |
+| **Time Between Steps** | Average time to complete each step |
+| **Path to Conversion** | Alternate routes users took |
+
+### Drop-off Analysis
+
+Identify why users leave at each step:
+
+```python
+dropoff = client.analytics.funnel_dropoff({
+    funnel_id: "fun_abc123",
+    step: "checkout_started",
+    breakdown: ["page_url", "device_type", "traffic_source"]
+})
+```
+
+### Exit Survey Integration
+
+When users abandon checkout, trigger exit survey:
+
+```typescript
+const survey = await client.analytics.create_survey({
+    trigger: "funnel_exit",
+    funnel_step: "checkout_started",
+    questions: [
+        { type: "single", text: "What prevented you from completing your purchase?" }
+    ],
+    theme: {
+        background_color: "#fafbfc",
+        primary_color: "#7c3aed"
+    }
+});
+```
+
+## Comparative Funnel Analysis
+
+### Time Period Comparison
+
+Compare funnels across time periods:
+
+```python
+comparison = client.analytics.compare_funnel({
+    funnel_id: "fun_abc123",
+    periods: [
+        { start: "2026-03-01", end: "2026-03-31", label": "March" },
+        { start: "2026-04-01", end: "2026-04-30", "label": "April" }
+    ]
+})
+```
+
+### A/B Test Funnels
+
+Analyze funnel performance by variant:
+
+```python
+experiment = client.analytics.funnel_experiment({
+    funnel: {...},
+    variant_dimensions: ["ab_test_variant"],
+    success_metric: "purchase_completed"
+})
+```
+
+## Attribution Modeling
+
+### Attribution Models
+
+Choose how to credit touchpoints:
+
+| Model | Description |
+|---|---|
+| `first_touch` | 100% credit to first interaction |
+| `last_touch` | 100% credit to last interaction |
+| `linear` | Equal credit across all touchpoints |
+| `time_decay` | More credit to recent interactions |
+| `position_based` | 40% first, 40% last, 20% middle |
+
+### Custom Attribution
+
+```python
+attribution = client.analytics.attribution({
+    model: "position_based",
+    weights: {"first": 0.4, "last": 0.4, "middle": 0.2},
+    touchpoint_events: ["ad_click", "page_view", "product_viewed"],
+    conversion_event: "purchase_completed"
+})
+```
+
+## Funnel Alerts
+
+### Setting Up Alerts
+
+Monitor funnel performance and receive notifications:
+
+```typescript
+alert = client.analytics.create_alert({
+    name: "Low Checkout Conversion",
+    funnel_id: "fun_abc123",
+    condition: {
+        metric: "conversion_rate",
+        step: "checkout_started",
+        threshold: 35,
+        comparison: "less_than"
+    },
+    notification: {
+        type: "webhook",
+        url: "https://hooks.example.com/funnel-alerts",
+        retry_count: 3
+    }
+})
+```
+
+<Callout type="info">
+  **Alert Frequency:** Funnel alerts check every 15 minutes. You'll receive at most one notification per day per alert to avoid spam.
+</Callout>

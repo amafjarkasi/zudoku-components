@@ -1,0 +1,217 @@
+---
+title: Migration from Stripe
+---
+
+
+Switching from Stripe to our platform? This guide covers the key differences and provides a step-by-step migration process.
+
+## Overview
+
+Our API is designed to be familiar to Stripe developers while offering improved performance and simplified pricing.
+
+## Key Differences
+
+| Aspect | Stripe | Our Platform |
+|---|---|---|
+| Pricing | 2.9% + 30¢ per transaction | 2.4% + 25¢ per transaction |
+| Dashboard | Complex, multi-page | Unified single dashboard |
+| API Speed | ~200ms avg | ~50ms avg |
+| Webhooks | 3-day retry | 6-attempt retry over 24h |
+| SDK Support | Limited | Full React, Python, Node |
+
+## Product Mapping
+
+| Stripe Concept | Our Concept |
+|---|---|
+| `Price` | `ProductVariant` |
+| `Product` | `Product` with variants |
+| `Customer` | `Customer` |
+| `Subscription` | `Subscription` |
+| `Invoice` | `Invoice` |
+| `PaymentIntent` | `Payment` |
+| `Charge` | `Payment` |
+
+## Migration Steps
+
+### 1. Export Stripe Data
+
+```bash
+stripe customers list --limit 100 > customers.json
+
+stripe products list > products.json
+
+stripe subscriptions list > subscriptions.json
+```
+
+### 2. Import to Our Platform
+
+```python
+import json
+
+with open('customers.json') as f:
+    customers = json.load(f)
+
+for customer in customers['data']:
+    our_customer = client.customers.create(
+        email=customer['email'],
+        name=customer['name'],
+        metadata={'stripe_id': customer['id']}
+    )
+```
+
+### 3. Import Products
+
+```python
+for product in stripe_products['data']:
+    our_product = client.products.create(
+        name=product['name'],
+        description=product['description'],
+        variants=[{
+            'sku': price['id'],
+            'price': price['unit_amount'],
+            'currency': price['currency']
+        }]
+    )
+```
+
+## Payment Migration
+
+### Stripe Payment Flow
+
+```typescript
+// Stripe
+const paymentIntent = await stripe.paymentIntents.create({
+  amount: 2000,
+  currency: 'usd',
+});
+
+const { clientSecret } = paymentIntent;
+```
+
+### Our Payment Flow
+
+```typescript
+// Our Platform
+const payment = await client.payments.create({
+  amount: 2000,
+  currency: 'usd',
+});
+
+// Direct response, no client secret needed
+// 3DS handled server-side
+```
+
+### API Comparison
+
+```typescript
+// Stripe
+const charge = await stripe.charges.create({
+  amount: 2000,
+  currency: 'usd',
+  source: 'card_xxx',
+  customer: 'cus_xxx'
+});
+
+// Ours
+const payment = await client.payments.create({
+  amount: 2000,
+  currency: 'usd',
+  customer_id: 'cust_xxx',
+  payment_method: 'pm_card_xxx'
+});
+```
+
+## Webhook Mapping
+
+| Stripe Event | Our Event |
+|---|---|
+| `payment_intent.succeeded` | `payment.succeeded` |
+| `payment_intent.payment_failed` | `payment.failed` |
+| `customer.created` | `user.created` |
+| `product.created` | `product.created` |
+| `subscription.created` | `subscription.created` |
+| `invoice.payment_succeeded` | `invoice.paid` |
+
+## Code Migration
+
+### Stripe SDK
+
+```typescript
+import Stripe from 'stripe';
+const stripe = new Stripe('sk_test_xxx');
+
+// Create payment
+const paymentIntent = await stripe.paymentIntents.create({
+  amount: 2000,
+  currency: 'usd',
+  customer: 'cus_xxx',
+  payment_method: 'pm_xxx'
+});
+```
+
+### Our SDK
+
+```typescript
+import { PremiumClient } from '@premium-api/sdk';
+const client = new PremiumClient({ apiKey: 'your_key' });
+
+// Create payment
+const payment = await client.payments.create({
+  amount: 2000,
+  currency: 'usd',
+  customer_id: 'cust_xxx',
+  payment_method: 'pm_xxx'
+});
+```
+
+## Testing
+
+### Parallel Running
+
+Run both systems during transition:
+
+```python
+def process_payment(amount, customer_id):
+    # Our system (primary)
+    result = our_client.payments.create(...)
+
+    # Stripe (shadow mode - no action)
+    stripe.Charge.create(...)
+
+    return result
+```
+
+### Data Validation
+
+Compare customer and payment records:
+
+```python
+def validate_migration():
+    stripe_customers = stripe.Customer.list()
+    our_customers = client.customers.list()
+
+    stripe_emails = {c.email for c in stripe_customers}
+    our_emails = {c.email for c in our_customers}
+
+    missing = stripe_emails - our_emails
+    if missing:
+        print(f"Migration incomplete: {missing}")
+```
+
+## Post-Migration
+
+<Callout type="info">
+  **Data Sync:** Continue syncing new Stripe data for 30 days to capture any missed transactions during migration.
+</Callout>
+
+### Update DNS / Webhooks
+
+Once satisfied with migration, update your webhook endpoints to point to our platform.
+
+### Monitoring
+
+Set up dashboards to monitor payment success rates and compare against previous Stripe metrics.
+
+<Callout type="info">
+  **Keep Stripe Active:** Maintain your Stripe account for 60 days after migration as a fallback. You can cancel the subscription but not close the account immediately.
+</Callout>

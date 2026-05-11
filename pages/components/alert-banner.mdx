@@ -1,0 +1,218 @@
+---
+title: Alert Banner
+description: Dismissible notification banners and alerts
+---
+
+# Alert Banner
+
+Notification banners for announcements and important information.
+
+## Info Alert
+
+<div class="alert alert--info">
+  <div class="alert-icon">ℹ️</div>
+  <div class="alert-content">
+    <div class="alert-title">Scheduled Maintenance</div>
+    <div class="alert-desc">API will be under maintenance on May 15th, 2026 from 2:00-4:00 AM UTC.</div>
+  </div>
+  <button class="alert-dismiss">×</button>
+</div>
+
+## Warning Alert
+
+<div class="alert alert--warning">
+  <div class="alert-icon">⚠️</div>
+  <div class="alert-content">
+    <div class="alert-title">API v1 Deprecation</div>
+    <div class="alert-desc">API v1 will be sunset on July 1, 2026. Please migrate to v2.</div>
+  </div>
+  <button class="alert-dismiss">×</button>
+</div>
+
+## Danger Alert
+
+<div class="alert alert--danger">
+  <div class="alert-icon">🚨</div>
+  <div class="alert-content">
+    <div class="alert-title">Security Notice</div>
+    <div class="alert-desc">A vulnerability was discovered in SDK versions below 2.1.0. Please update immediately.</div>
+  </div>
+  <button class="alert-dismiss">×</button>
+</div>
+
+## Success Alert
+
+<div class="alert alert--success">
+  <div class="alert-icon">✅</div>
+  <div class="alert-content">
+    <div class="alert-title">Feature Released</div>
+    <div class="alert-desc">Batch product updates API is now available. Check the changelog for details.</div>
+  </div>
+  <button class="alert-dismiss">×</button>
+</div>
+
+## With Action Button
+
+<div class="alert alert--info">
+  <div class="alert-icon">📣</div>
+  <div class="alert-content">
+    <div class="alert-title">New Documentation</div>
+    <div class="alert-desc">Check out our new webhook testing guide.</div>
+  </div>
+  <a href="/integrations/webhooks" class="alert-action">View Guide</a>
+  <button class="alert-dismiss">×</button>
+</div>
+
+## Page-Level Banner
+
+<div class="page-banner">
+  <div class="page-banner-content">
+    🎉 <strong>New:</strong> Webhook event catalog now available with live payload examples.
+  </div>
+  <a href="/components/webhook-catalog" class="page-banner-link">Check it out →</a>
+</div>
+
+<style>{`
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    border: 1px solid;
+  }
+
+  .alert--info {
+    background: #dbeafe;
+    border-color: #1e40af;
+    color: #1e40af;
+  }
+
+  .dark .alert--info {
+    background: #1e3a5f;
+    color: #93c5fd;
+  }
+
+  .alert--warning {
+    background: #fef3c7;
+    border-color: #92400e;
+    color: #92400e;
+  }
+
+  .dark .alert--warning {
+    background: #5c3d0a;
+    color: #fde047;
+  }
+
+  .alert--danger {
+    background: #fee2e2;
+    border-color: #991b1b;
+    color: #991b1b;
+  }
+
+  .dark .alert--danger {
+    background: #5c1a1a;
+    color: #fca5a5;
+  }
+
+  .alert--success {
+    background: #dcfce7;
+    border-color: #166534;
+    color: #166534;
+  }
+
+  .dark .alert--success {
+    background: #14532d;
+    color: #86efac;
+  }
+
+  .alert-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .alert-content {
+    flex: 1;
+  }
+
+  .alert-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .alert-desc {
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+
+  .alert-action {
+    padding: 0.35rem 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+  }
+
+  .alert-action:hover {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .alert-dismiss {
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+  }
+
+  .alert-dismiss:hover {
+    opacity: 1;
+  }
+
+  .page-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(90deg, var(--primary), #3b82f6);
+    color: white;
+    border-radius: var(--radius);
+    margin: 1.5rem 0;
+  }
+
+  .page-banner-content {
+    font-size: 0.85rem;
+  }
+
+  .page-banner-link {
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    opacity: 0.9;
+    transition: opacity 0.15s ease;
+  }
+
+  .page-banner-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+  }
+`}</style>
+
+<script>{`
+  document.addEventListener('DOMContentLoaded', function() {
+    const dismissBtns = document.querySelectorAll('.alert-dismiss');
+    dismissBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        btn.parentElement.style.display = 'none';
+      });
+    });
+  });
+`}</script>

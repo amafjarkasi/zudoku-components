@@ -1,0 +1,275 @@
+---
+title: Reliability Best Practices
+---
+
+
+Build robust applications that gracefully handle failures, maintain data consistency, and ensure high availability.
+
+## Error Handling
+
+### Implement Retry Logic
+
+```typescript
+import { retry } from ' retry';
+
+async function fetchWithRetry<T>(
+    fn: () => Promise<T>,
+    options = { retries: 3, delay: 1000 }
+): Promise<T> {
+    return retry(fn, {
+        maxAttempts: options.retries,
+        delay: options.delay,
+        backoff: 'exponential',
+        onRetry: (error, attempt) => {
+            console.log(`Attempt ${attempt} failed: ${error.message}`);
+            metrics.increment('api.retry', { error: error.code });
+        }
+    });
+}
+
+// Usage
+const product = await fetchWithRetry(
+    () => client.products.get('prod_123'),
+    { retries: 5, delay: 500 }
+);
+```
+
+### Circuit Breaker Pattern
+
+```python
+from circuitbreaker import circuit
+
+@circuit(failure_threshold=5, recovery_timeout=30)
+def call_premium_api():
+    return client.products.list()
+
+```
+
+## Idempotent Operations
+
+### Idempotency Keys
+
+```typescript
+// All write operations support idempotency
+const payment = await client.payments.create(
+    {
+        amount: 2999,
+        customer_id: 'cust_abc',
+        payment_method: 'pm_card'
+    },
+    {
+        idempotencyKey: 'order_123_payment_attempt_1',
+        idempotencyWindow: '1h'
+    }
+);
+
+// Same key returns cached result
+const cached = await client.payments.create(
+    { amount: 2999, ... },
+    { idempotencyKey: 'order_123_payment_attempt_1' }
+);
+// Returns same payment object
+```
+
+### Safe Retries
+
+```python
+def process_payment(order_id, attempt=1):
+    try:
+        return client.payments.create(
+            {'order_id': order_id, 'amount': get_order_total(order_id)},
+            {'idempotency_key': f'payment_order_{order_id}_attempt_{attempt}'}
+        )
+    except IdempotencyKeyConflict:
+        # Already processed
+        return client.payments.get_by_order(order_id)
+    except RateLimitError:
+        time.sleep(2 ** attempt)  # Exponential backoff
+        return process_payment(order_id, attempt + 1)
+```
+
+## Data Consistency
+
+### Eventual Consistency Model
+
+Understand our consistency model:
+
+| Operation | Consistency | Description |
+|---|---|---|
+| Read after write | Eventual | May need retry for latest data |
+| Inventory check | Immediate | Real-time, no staleness |
+| Order creation | Immediate | Transactional |
+| Webhook delivery | At-least-once | Retries on failure |
+| Analytics queries | Eventual | ~5 minute delay |
+
+### Optimistic Updates
+
+```typescript
+// Update UI optimistically, reconcile on response
+async function addToCart(item: CartItem) {
+    // Immediate UI update
+    cartStore.addItem(item);
+
+    try {
+        // Confirm with server
+        await client.cart.addItem(item);
+    } catch (error) {
+        // Rollback on failure
+        cartStore.removeItem(item.id);
+        showError('Failed to add item');
+    }
+}
+```
+
+## Graceful Degradation
+
+### Fallback Data
+
+```typescript
+async function getProductsWithFallback() {
+    try {
+        return await client.products.list();
+    } catch (error) {
+        // Return cached data if available
+        const cached = await cache.get('products:fallback');
+        if (cached) {
+            console.warn('Using fallback products due to API error');
+            return cached;
+        }
+
+        // Or return empty with message
+        return {
+            items: [],
+            warning: 'Unable to fetch products, please try again'
+        };
+    }
+}
+```
+
+### Feature Flags
+
+```python
+def get_recommendations(product_id):
+    if not feature_flags.is_enabled('recommendations'):
+        return []  # Graceful fallback
+
+    try:
+        return client.recommendations.get(product_id)
+    except ServiceUnavailable:
+        return []  # Degrade gracefully
+```
+
+## Health Checks
+
+### Implement Health Endpoints
+
+```typescript
+app.get('/health', async (req, res) => {
+    const checks = {
+        api: await checkApiHealth(),
+        database: await checkDatabase(),
+        cache: await checkCache()
+    };
+
+    const healthy = Object.values(checks).every(c => c.healthy);
+
+    res.status(healthy ? 200 : 503).json({
+        status: healthy ? 'healthy' : 'unhealthy',
+        checks,
+        timestamp: new Date().toISOString()
+    });
+});
+
+async function checkApiHealth() {
+    try {
+        await client.health.ping();
+        return { healthy: true, latency: 'ok' };
+    } catch {
+        return { healthy: false, error: 'API unreachable' };
+    }
+}
+```
+
+### External Health Monitoring
+
+```bash
+
+curl https://api.premium-api.com/health
+```
+
+## SLO/SLI Targets
+
+### Our Uptime Commitments
+
+| Tier | Monthly Uptime | Max Downtime |
+|---|---|---|
+| Free | 99.5% | 3h 39m |
+| Pro | 99.9% | 43m 49s |
+| Enterprise | 99.99% | 4m 22s |
+
+### Latency SLIs
+
+| Percentile | Target |
+|---|---|
+| p50 | <30ms |
+| p95 | <100ms |
+| p99 | <200ms |
+
+## Chaos Engineering
+
+### Test Failure Scenarios
+
+```python
+def test_payment_graceful_degradation():
+    # Mock API failure
+    with mock_api_failure(failure_mode='timeout'):
+        # Should not raise
+        result = process_payment_with_retry(order_id)
+        assert result.status == 'pending_retry'
+
+    # Mock rate limit
+    with mock_api_failure(failure_mode='rate_limit'):
+        result = process_payment_with_retry(order_id)
+        assert result.status == 'pending_retry'
+        assert result.retry_after > 0
+```
+
+### Runbook Templates
+
+```
+## Payment Processing Failure
+
+1. Check API status page
+2. Verify authentication is working
+3. Check rate limits not exceeded
+4. Enable debug logging
+5. Retry with exponential backoff
+6. If persistent, escalate to engineering
+```
+
+## Recovery Procedures
+
+### Data Recovery
+
+```python
+recovery_point = client.backups.get_point_in_time(
+    timestamp='2026-05-10T14:30:00Z'
+)
+
+client.backups.restore({
+    point_in_time: recovery_point.id,
+    target: 'production'
+})
+```
+
+### Disaster Recovery
+
+| Scenario | RTO | RPO |
+|---|---|---|
+| API outage | <5 min | <1 min |
+| Data corruption | <1 hour | <15 min |
+| Region failure | <15 min | <1 hour |
+
+<Callout type="info">
+  **Status Page:** Always check https://status.premium-api.com first during incidents. Subscribe to status updates for real-time notifications.
+</Callout>

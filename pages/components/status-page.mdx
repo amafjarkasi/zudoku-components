@@ -1,0 +1,297 @@
+---
+title: Status Page
+description: API health and incident status
+---
+
+# API Status
+
+Real-time status of the Zu API platform.
+
+<div class="status-dashboard">
+  <div class="status-hero status-hero--operational">
+    <div class="status-indicator"></div>
+    <div class="status-message">All Systems Operational</div>
+    <div class="status-time">Last checked: just now</div>
+  </div>
+
+  <div class="status-services">
+    <div class="status-service">
+      <div class="status-service-header">
+        <div class="status-service-name">E-Commerce API</div>
+        <div class="status-service-badge status-service-badge--up">Operational</div>
+      </div>
+      <div class="status-service-bar">
+        <div class="status-service-fill" style="width: 99.99%"></div>
+      </div>
+      <div class="status-service-meta">99.99% uptime • 30-day</div>
+    </div>
+
+    <div class="status-service">
+      <div class="status-service-header">
+        <div class="status-service-name">Analytics API</div>
+        <div class="status-service-badge status-service-badge--up">Operational</div>
+      </div>
+      <div class="status-service-bar">
+        <div class="status-service-fill" style="width: 99.95%"></div>
+      </div>
+      <div class="status-service-meta">99.95% uptime • 30-day</div>
+    </div>
+
+    <div class="status-service">
+      <div class="status-service-header">
+        <div class="status-service-name">Auth API</div>
+        <div class="status-service-badge status-service-badge--up">Operational</div>
+      </div>
+      <div class="status-service-bar">
+        <div class="status-service-fill" style="width: 99.99%"></div>
+      </div>
+      <div class="status-service-meta">99.99% uptime • 30-day</div>
+    </div>
+
+    <div class="status-service">
+      <div class="status-service-header">
+        <div class="status-service-name">Webhooks</div>
+        <div class="status-service-badge status-service-badge--up">Operational</div>
+      </div>
+      <div class="status-service-bar">
+        <div class="status-service-fill" style="width: 99.87%"></div>
+      </div>
+      <div class="status-service-meta">99.87% uptime • 30-day</div>
+    </div>
+
+    <div class="status-service">
+      <div class="status-service-header">
+        <div class="status-service-name">Dashboard</div>
+        <div class="status-service-badge status-service-badge--up">Operational</div>
+      </div>
+      <div class="status-service-bar">
+        <div class="status-service-fill" style="width: 100%"></div>
+      </div>
+      <div class="status-service-meta">100% uptime • 30-day</div>
+    </div>
+  </div>
+</div>
+
+## Recent Incidents
+
+<div class="incident-list">
+  <div class="incident-item incident-item--resolved">
+    <div class="incident-time">May 5, 2026 • 14:32 UTC</div>
+    <div class="incident-title">Webhook Delivery Delay</div>
+    <div class="incident-desc">
+      Some webhook deliveries experienced delays of up to 30 seconds. Issue resolved.
+    </div>
+    <div class="incident-status">Resolved</div>
+  </div>
+
+  <div class="incident-item incident-item--resolved">
+    <div class="incident-time">Apr 18, 2026 • 09:15 UTC</div>
+    <div class="incident-title">Elevated Error Rates</div>
+    <div class="incident-desc">
+      A deployment caused elevated 5xx errors for ~8 minutes. Auto-recovered.
+    </div>
+    <div class="incident-status">Resolved</div>
+  </div>
+</div>
+
+## Subscribe to Updates
+
+<div class="status-subscribe">
+  <p>Get notified of incidents and maintenance windows.</p>
+  <div class="status-subscribe-btns">
+    <button class="status-subscribe-btn">📧 Email Notifications</button>
+    <button class="status-subscribe-btn">💬 Slack Integration</button>
+    <button class="status-subscribe-btn">𝕏 Twitter Updates</button>
+  </div>
+</div>
+
+<style>{`
+  .status-dashboard {
+    margin: 2rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--card);
+  }
+
+  .status-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 2rem;
+    text-align: center;
+  }
+
+  .status-hero--operational {
+    background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+  }
+
+  .dark .status-hero--operational {
+    background: linear-gradient(135deg, #166534 0%, #052e16 100%);
+  }
+
+  .status-indicator {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #22c55e;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+  }
+
+  .status-message {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #166534;
+  }
+
+  .dark .status-message {
+    color: #dcfce7;
+  }
+
+  .status-time {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    margin-top: 0.25rem;
+  }
+
+  .status-services {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .status-service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .status-service-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .status-service-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.15rem 0.5rem;
+    border-radius: 1rem;
+  }
+
+  .status-service-badge--up {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .dark .status-service-badge--up {
+    background: #166534;
+    color: #dcfce7;
+  }
+
+  .status-service-bar {
+    height: 6px;
+    background: var(--muted);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .status-service-fill {
+    height: 100%;
+    background: #22c55e;
+    border-radius: 3px;
+  }
+
+  .status-service-meta {
+    font-size: 0.7rem;
+    color: var(--muted-foreground);
+    margin-top: 0.35rem;
+  }
+
+  .incident-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .incident-item {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+  }
+
+  .incident-time {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
+    margin-bottom: 0.35rem;
+  }
+
+  .incident-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .incident-desc {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.5rem;
+  }
+
+  .incident-status {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.15rem 0.5rem;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 1rem;
+    width: fit-content;
+  }
+
+  .dark .incident-status {
+    background: #166534;
+    color: #dcfce7;
+  }
+
+  .status-subscribe {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--muted);
+    border-radius: var(--radius);
+    text-align: center;
+  }
+
+  .status-subscribe p {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    margin-bottom: 1rem;
+  }
+
+  .status-subscribe-btns {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .status-subscribe-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .status-subscribe-btn:hover {
+    border-color: var(--primary);
+    background: var(--accent);
+  }
+`}</style>

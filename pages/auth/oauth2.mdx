@@ -1,0 +1,253 @@
+---
+title: OAuth2 Flow
+---
+
+
+Build applications that access user data on their behalf using our OAuth2 Authorization Code flow. This is required for apps in our marketplace and any integration where users need to grant third-party access.
+
+## OAuth2 Flow Overview
+
+<Mermaid chart={`
+flowchart TD
+    User -->|Initiates OAuth| App
+    App -->|Redirect to Auth Server| AuthServer[Auth Server]
+    AuthServer -->|Login/Consent| User
+    User -->|Grant Consent| AuthServer
+    AuthServer -->|Authorization Code| App
+    App -->|"Token Exchange (code)"| AuthServer
+    AuthServer -->|Access Token| App
+`} />
+
+## Scopes
+
+| Scope | Description |
+|---|---|
+| `products:read` | View product catalog |
+| `products:write` | Create/update products |
+| `orders:read` | View order history |
+| `orders:write` | Create/update orders |
+| `customers:read` | View customer data |
+| `customers:write` | Manage customer records |
+| `analytics:read` | Access analytics data |
+| `webhooks:write` | Configure webhooks |
+
+## Implementation Steps
+
+### 1. Register Your Application
+
+Create an application in your developer dashboard:
+
+```bash
+curl -X POST https://api.zephyr.com/v1/oauth/apps \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "name": "My Integration App",
+    "redirect_uris": [
+      "https://my-app.com/callback",
+      "https://staging.my-app.com/callback"
+    ],
+    "scopes": ["products:read", "orders:write"],
+    "logo_url": "https://my-app.com/logo.png"
+  }'
+```
+
+Response:
+
+```json
+{
+  "client_id": "app_abc123xyz",
+  "client_secret": "cs_xxxxxxxxxxxxx",
+  "name": "My Integration App",
+  "status": "active"
+}
+```
+
+<Callout type="info">
+  **Store client_secret securely!** It is shown only once. Use environment variables or a secrets manager.
+</Callout>
+
+### 2. Redirect User for Authorization
+
+```typescript
+const authUrl = new URL('https://auth.zephyr.com/oauth/authorize');
+
+authUrl.searchParams.set('client_id', 'app_abc123xyz');
+authUrl.searchParams.set('redirect_uri', 'https://my-app.com/callback');
+authUrl.searchParams.set('response_type', 'code');
+authUrl.searchParams.set('scope', 'products:read orders:write');
+authUrl.searchParams.set('state', generateRandomState());  // CSRF protection
+
+// Redirect user
+window.location.href = authUrl.toString();
+```
+
+### 3. Handle the Callback
+
+After user consent, they're redirected to your callback URL:
+
+```
+https://my-app.com/callback?code=AUTH_CODE_xyz&state=random_state
+```
+
+Verify state to prevent CSRF:
+
+```typescript
+function handleCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+
+  // Verify state matches what you stored
+  if (state !== storedState) {
+    throw new Error('State mismatch - possible CSRF attack');
+  }
+
+  return code;
+}
+```
+
+### 4. Exchange Code for Tokens
+
+Exchange the authorization code for access and refresh tokens:
+
+```python
+import requests
+
+def exchange_code_for_tokens(code):
+    response = requests.post('https://auth.zephyr.com/oauth/token', data={
+        'grant_type': 'authorization_code',
+        'client_id': 'app_abc123xyz',
+        'client_secret': 'cs_xxxxxxxxxxxxx',
+        'code': code,
+        'redirect_uri': 'https://my-app.com/callback'
+    })
+
+    return response.json()
+```
+
+Response:
+
+```json
+{
+  "access_token": "at_xxxxxxxxxxxx",
+  "refresh_token": "rt_xxxxxxxxxxxx",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "products:read orders:write"
+}
+```
+
+### 5. Use the Access Token
+
+```typescript
+async function getProducts(accessToken) {
+  const response = await fetch('https://api.zephyr.com/v1/products', {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return response.json();
+}
+```
+
+## Token Refresh
+
+Access tokens expire after 1 hour. Use the refresh token to get new tokens:
+
+```python
+def refresh_access_token(refresh_token):
+    response = requests.post('https://auth.zephyr.com/oauth/token', data={
+        'grant_type': 'refresh_token',
+        'client_id': 'app_abc123xyz',
+        'client_secret': 'cs_xxxxxxxxxxxxx',
+        'refresh_token': refresh_token
+    })
+
+    return response.json()
+```
+
+Refresh token response:
+
+```json
+{
+  "access_token": "at_new_xxxxxxxxxxxx",
+  "refresh_token": "rt_new_xxxxxxxxxxxx",
+  "expires_in": 3600
+}
+```
+
+<Callout type="info">
+  **Refresh Token Rotation:** Each refresh returns a new refresh token. Store the latest refresh token and discard the old one.
+</Callout>
+
+## Token Validation
+
+Validate tokens on every request:
+
+```typescript
+async function validateToken(token) {
+  try {
+    const response = await fetch('https://auth.zephyr.com/oauth/introspect', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    const data = await response.json();
+    return data.active ? data : null;
+  } catch {
+    return null;
+  }
+}
+```
+
+## Revoking Tokens
+
+Allow users to disconnect your app:
+
+```python
+def revoke_token(access_token):
+    requests.post('https://auth.zephyr.com/oauth/revoke', data={
+        'token': access_token,
+        'client_id': 'app_abc123xyz',
+        'client_secret': 'cs_xxxxxxxxxxxxx'
+    })
+```
+
+## Security Best Practices
+
+- **Always use HTTPS** for all OAuth communications
+- **Validate state parameter** to prevent CSRF attacks
+- **Store tokens encrypted** at rest
+- **Use short-lived access tokens** (1 hour) with refresh tokens
+- **Implement token rotation** on refresh
+- **Log all OAuth operations** for audit trail
+
+## PKCE Extension
+
+For public clients (mobile apps, SPAs), use PKCE (Proof Key for Code Exchange):
+
+```typescript
+// Generate code verifier and challenge
+const codeVerifier = generateRandomString(64);
+const codeChallenge = await sha256(codeVerifier);
+
+// Store code verifier for later
+sessionStorage.setItem('code_verifier', codeVerifier);
+
+// Authorization request with PKCE
+const authUrl = new URL('https://auth.example.com/oauth/authorize');
+authUrl.searchParams.set('code_challenge', codeChallenge);
+authUrl.searchParams.set('code_challenge_method', 'S256');
+
+// Token exchange includes code verifier
+const response = await fetch('/oauth/token', {
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: authCode,
+    code_verifier: codeVerifier,
+    client_id: 'app_abc123xyz'
+  })
+});
+```

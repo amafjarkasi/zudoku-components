@@ -1,0 +1,236 @@
+---
+title: Badges and Tags
+description: Labels, badges, and tags for metadata
+---
+
+# Badges and Tags
+
+Labels and badges for metadata and categorization.
+
+## Status Badges
+
+<div class="badge-showcase">
+  <span class="badge badge--default">Default</span>
+  <span class="badge badge--primary">Primary</span>
+  <span class="badge badge--success">Success</span>
+  <span class="badge badge--warning">Warning</span>
+  <span class="badge badge--danger">Danger</span>
+  <span class="badge badge--info">Info</span>
+</div>
+
+## Size Variants
+
+<div class="badge-showcase">
+  <span class="badge badge--sm badge--primary">Small</span>
+  <span class="badge badge--md badge--primary">Medium</span>
+  <span class="badge badge--lg badge--primary">Large</span>
+</div>
+
+## With Icons
+
+<div class="badge-showcase">
+  <span class="badge badge--icon">
+    <span>🔐</span> Auth
+  </span>
+  <span class="badge badge--icon">
+    <span>🛒</span> E-Commerce
+  </span>
+  <span class="badge badge--icon">
+    <span>📊</span> Analytics
+  </span>
+</div>
+
+## Tags
+
+<div class="tag-showcase">
+  <span class="tag">JavaScript</span>
+  <span class="tag">TypeScript</span>
+  <span class="tag">Python</span>
+  <span class="tag">Go</span>
+  <span class="tag tag--removable">API Key ×</span>
+</div>
+
+## Method Badges
+
+<div class="badge-showcase">
+  <span class="method-badge method-badge--get">GET</span>
+  <span class="method-badge method-badge--post">POST</span>
+  <span class="method-badge method-badge--put">PUT</span>
+  <span class="method-badge method-badge--patch">PATCH</span>
+  <span class="method-badge method-badge--delete">DELETE</span>
+</div>
+
+## Plan Badges
+
+<div class="badge-showcase">
+  <span class="plan-badge plan-badge--free">Free</span>
+  <span class="plan-badge plan-badge--pro">Pro</span>
+  <span class="plan-badge plan-badge--enterprise">Enterprise</span>
+</div>
+
+<style>{`
+  .badge-showcase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .badge--sm { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
+  .badge--md { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+  .badge--lg { font-size: 0.85rem; padding: 0.35rem 0.8rem; }
+
+  .badge--default {
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .badge--primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .badge--success {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .dark .badge--success {
+    background: #166534;
+    color: #dcfce7;
+  }
+
+  .badge--warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .dark .badge--warning {
+    background: #92400e;
+    color: #fef3c7;
+  }
+
+  .badge--danger {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .dark .badge--danger {
+    background: #991b1b;
+    color: #fee2e2;
+  }
+
+  .badge--info {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .dark .badge--info {
+    background: #1e40af;
+    color: #dbeafe;
+  }
+
+  .badge--icon {
+    padding: 0.25rem 0.6rem;
+  }
+
+  .tag-showcase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .tag {
+    padding: 0.3rem 0.75rem;
+    background: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
+    color: var(--foreground);
+  }
+
+  .tag--removable {
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .tag--removable:hover {
+    background: var(--destructive);
+    border-color: var(--destructive);
+    color: var(--destructive-foreground);
+  }
+
+  .method-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .method-badge--get {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .method-badge--post {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .method-badge--put {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .method-badge--patch {
+    background: #f3e8ff;
+    color: #6b21a8;
+  }
+
+  .method-badge--delete {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .dark .method-badge--get { background: #166534; color: #dcfce7; }
+  .dark .method-badge--post { background: #1e40af; color: #dbeafe; }
+  .dark .method-badge--put { background: #92400e; color: #fef3c7; }
+  .dark .method-badge--patch { background: #6b21a8; color: #f3e8ff; }
+  .dark .method-badge--delete { background: #991b1b; color: #fee2e2; }
+
+  .plan-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .plan-badge--free {
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .plan-badge--pro {
+    background: linear-gradient(135deg, var(--primary), #3b82f6);
+    color: white;
+  }
+
+  .plan-badge--enterprise {
+    background: linear-gradient(135deg, #1e40af, #7c3aed);
+    color: white;
+  }
+`}</style>

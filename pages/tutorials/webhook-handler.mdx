@@ -1,0 +1,843 @@
+---
+title: Webhook Handler Tutorial
+description: Build robust webhook handlers to process real-time events from the Zephyr API
+---
+
+Webhooks allow your application to receive real-time notifications when events occur in the Zephyr platform. This tutorial teaches you how to build a production-ready webhook handler that processes events securely and reliably.
+
+## What You'll Build
+
+<div class="tutorial-progress">
+  <div class="tutorial-step tutorial-step--completed">
+    <div class="tutorial-step__number">1</div>
+    <div class="tutorial-step__label">Prerequisites</div>
+  </div>
+  <div class="tutorial-step tutorial-step--current">
+    <div class="tutorial-step__number">2</div>
+    <div class="tutorial-step__label">Understand Webhooks</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">3</div>
+    <div class="tutorial-step__label">Register Webhook</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">4</div>
+    <div class="tutorial-step__label">Build Handler</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">5</div>
+    <div class="tutorial-step__label">Implement Idempotency</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">6</div>
+    <div class="tutorial-step__label">Test & Deploy</div>
+  </div>
+</div>
+
+A webhook handler that:
+
+1. Validates incoming webhook signatures
+2. Processes order events (created, updated, fulfilled)
+3. Handles product inventory updates
+4. Implements retry logic for failed processing
+5. Logs events for monitoring and debugging
+
+## Prerequisites
+
+- A public HTTPS URL to receive webhooks (use ngrok for development)
+- Your webhook signing secret from the dashboard
+- Basic understanding of HTTP request handling
+
+## Understanding Webhooks
+
+### How Webhooks Work
+
+```
+┌──────────────┐         ┌──────────────┐         ┌──────────────┐
+│  Zephyr API  │────────▶│   Internet   │────────▶│  Your Server │
+│              │  POST   │              │  POST   │              │
+│  order.created               │              │  /webhooks    │
+└──────────────┘         └──────────────┘         └──────────────┘
+                                                            │
+                                                            ▼
+                                                   ┌──────────────┐
+                                                   │   Process    │
+                                                   │   Event      │
+                                                   └──────────────┘
+```
+
+### Webhook Event Structure
+
+Every webhook payload follows this structure:
+
+```json
+{
+  "id": "evt_abc123xyz789",
+  "type": "order.created",
+  "api_version": "2026-05-01",
+  "created_at": "2026-05-11T10:30:00Z",
+  "data": {
+    "object": {
+      "id": "ord_xyz789abc123",
+      "status": "pending_payment",
+      "customer": { ... },
+      "line_items": [ ... ],
+      "pricing": { ... }
+    }
+  },
+  "metadata": {
+    "delivery_attempt": 1,
+    "next_retry_at": null
+  }
+}
+```
+
+## Step 1: Register Your Webhook
+
+First, register the webhook endpoint in your dashboard or via API:
+
+```bash
+curl -X POST https://api.zephyr.com/v1/webhooks \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-domain.com/api/webhooks",
+    "events": [
+      "order.created",
+      "order.updated",
+      "order.fulfilled",
+      "order.cancelled",
+      "product.inventory_low",
+      "product.inventory_out_of_stock"
+    ],
+    "description": "Production order processor"
+  }'
+```
+
+<Callout type="info">
+  **Important:** Use HTTPS for your webhook URL. HTTP endpoints will be rejected
+  in production for security reasons.
+</Callout>
+
+### Response
+
+```json
+{
+  "id": "wh_abc123",
+  "url": "https://your-domain.com/api/webhooks",
+  "events": [
+    "order.created",
+    "order.updated",
+    "order.fulfilled",
+    "order.cancelled",
+    "product.inventory_low",
+    "product.inventory_out_of_stock"
+  ],
+  "status": "active",
+  "secret": "whsec_abc123...",  # Save this - shown only once!
+  "created_at": "2026-05-11T10:30:00Z"
+}
+```
+
+## Step 2: Build the Webhook Handler
+
+### Node.js Implementation
+
+```javascript
+// src/webhooks/handler.js
+import crypto from "crypto";
+
+/**
+ * Webhook Handler for Zephyr Events
+ * Handles signature verification and event processing
+ */
+class WebhookHandler {
+  constructor(secret) {
+    this.secret = secret;
+    this.eventHandlers = new Map();
+  }
+
+  /**
+   * Register an event handler
+   * @param {string} eventType - Event type (e.g., 'order.created')
+   * @param {Function} handler - Async function to handle the event
+   */
+  on(eventType, handler) {
+    this.eventHandlers.set(eventType, handler);
+  }
+
+  /**
+   * Verify the webhook signature
+   * @param {string} payload - Raw request body
+   * @param {string} signature - X-Webhook-Signature header
+   * @param {string} timestamp - X-Webhook-Timestamp header
+   * @returns {boolean} Whether the signature is valid
+   */
+  verifySignature(payload, signature, timestamp) {
+    // Check timestamp to prevent replay attacks (5 minute window)
+    const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300;
+    if (parseInt(timestamp) < fiveMinutesAgo) {
+      console.warn("Webhook timestamp too old, possible replay attack");
+      return false;
+    }
+
+    // Compute expected signature
+    const signedPayload = `${timestamp}.${payload}`;
+    const expectedSignature = crypto
+      .createHmac("sha256", this.secret)
+      .update(signedPayload)
+      .digest("hex");
+
+    // Compare signatures (timing-safe)
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature),
+    );
+  }
+
+  /**
+   * Process an incoming webhook
+   * @param {object} payload - Parsed webhook payload
+   */
+  async handle(payload) {
+    const { type, id, data, metadata } = payload;
+
+    console.log(`Processing event: ${type} (${id})`);
+
+    // Get the handler for this event type
+    const handler = this.eventHandlers.get(type);
+
+    if (!handler) {
+      console.log(`No handler registered for ${type}, acknowledging anyway`);
+      return { success: true, action: "acknowledged" };
+    }
+
+    try {
+      // Handle the event with the registered handler
+      const result = await handler(data.object, metadata);
+
+      console.log(`Successfully processed ${type}:`, result);
+      return { success: true, result };
+    } catch (error) {
+      console.error(`Error processing ${type}:`, error);
+
+      // Return failure to trigger retry
+      return {
+        success: false,
+        error: error.message,
+        shouldRetry: this.shouldRetry(error),
+      };
+    }
+  }
+
+  /**
+   * Determine if an error should trigger a retry
+   * @param {Error} error - The error that occurred
+   */
+  shouldRetry(error) {
+    // Retry on transient errors (network, timeout, 5xx)
+    // Don't retry on permanent errors (validation, not found, 4xx)
+    const nonRetryableCodes = [
+      "validation_error",
+      "invalid_payload",
+      "resource_not_found",
+      "authentication_error",
+    ];
+
+    return !nonRetryableCodes.includes(error.code);
+  }
+}
+
+export default WebhookHandler;
+```
+
+### Express.js Server Implementation
+
+```javascript
+// src/server.js
+import express from "express";
+import crypto from "crypto";
+import WebhookHandler from "./webhooks/handler.js";
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Initialize webhook handler with your secret
+const webhookHandler = new WebhookHandler(process.env.WEBHOOK_SECRET);
+
+// Raw body parser - required for signature verification
+app.use("/api/webhooks", express.raw({ type: "application/json" }));
+
+// Register event handlers
+webhookHandler.on("order.created", async (order, metadata) => {
+  console.log(`New order: ${order.id}`);
+
+  // Validate order data
+  if (!order.customer?.email) {
+    throw new Error("Order missing customer email");
+  }
+
+  // Create order in your local system
+  await localDatabase.orders.create({
+    id: order.id,
+    status: order.status,
+    customer_email: order.customer.email,
+    total: order.pricing.grand_total,
+    created_at: new Date(),
+  });
+
+  // Send confirmation email
+  await emailService.sendOrderConfirmation(order);
+
+  return { action: "order_created", order_id: order.id };
+});
+
+webhookHandler.on("order.fulfilled", async (order, metadata) => {
+  console.log(`Order fulfilled: ${order.id}`);
+
+  // Update local order status
+  await localDatabase.orders.update(order.id, {
+    status: "fulfilled",
+    fulfilled_at: new Date(),
+  });
+
+  // Send shipping notification
+  await emailService.sendShippingNotification(order);
+
+  return { action: "order_fulfilled", order_id: order.id };
+});
+
+webhookHandler.on("order.cancelled", async (order, metadata) => {
+  console.log(`Order cancelled: ${order.id}`);
+
+  // Update local order status
+  await localDatabase.orders.update(order.id, {
+    status: "cancelled",
+    cancelled_at: new Date(),
+    cancellation_reason: order.cancellation_reason,
+  });
+
+  // Process refund if payment was captured
+  if (order.payment?.captured) {
+    await paymentService.refund(order.id, order.pricing.grand_total);
+  }
+
+  // Restore inventory
+  for (const item of order.line_items) {
+    await inventoryService.restore(item.variant_id, item.quantity);
+  }
+
+  return { action: "order_cancelled", order_id: order.id };
+});
+
+webhookHandler.on("product.inventory_low", async (product, metadata) => {
+  console.log(`Low inventory alert: ${product.name}`);
+
+  // Check if we should reorder
+  const currentQuantity = product.inventory.quantity;
+  const reorderThreshold = 10;
+
+  if (currentQuantity < reorderThreshold) {
+    await notificationService.alert({
+      type: "low_inventory",
+      product_id: product.id,
+      product_name: product.name,
+      current_quantity: currentQuantity,
+      threshold: reorderThreshold,
+    });
+  }
+
+  return { action: "inventory_alerted" };
+});
+
+// Webhook endpoint
+app.post("/api/webhooks", async (req, res) => {
+  const signature = req.headers["x-webhook-signature"];
+  const timestamp = req.headers["x-webhook-timestamp"];
+
+  // Verify signature
+  if (!webhookHandler.verifySignature(req.body, signature, timestamp)) {
+    console.error("Invalid webhook signature");
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // Parse payload
+  const payload = JSON.parse(req.body);
+
+  // Process the webhook
+  const result = await webhookHandler.handle(payload);
+
+  if (result.success) {
+    // Return 200 quickly to acknowledge receipt
+    res.status(200).json({ received: true, ...result });
+  } else if (result.shouldRetry) {
+    // Return 500 to trigger retry
+    res.status(500).json({ error: result.error, retry: true });
+  } else {
+    // Permanent failure - acknowledge but don't retry
+    res.status(200).json({ received: true, error: result.error, retry: false });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Webhook server running on port ${PORT}`);
+});
+```
+
+### Python/FastAPI Implementation
+
+```python
+# src/webhooks/handler.py
+import hashlib
+import hmac
+import time
+from typing import Callable, Dict, Any, Optional
+from fastapi import FastAPI, Request, HTTPException, Header
+from pydantic import BaseModel
+
+app = FastAPI()
+
+# Webhook signing secret from environment
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+
+# Event handlers registry
+event_handlers: Dict[str, Callable] = {}
+
+
+class WebhookPayload(BaseModel):
+    id: str
+    type: str
+    api_version: str
+    created_at: str
+    data: Dict[str, Any]
+    metadata: Dict[str, Any]
+
+
+class WebhookHandler:
+    """Handles webhook verification and event routing"""
+
+    def __init__(self, secret: str):
+        self.secret = secret
+        self.handlers = {}
+
+    def on(self, event_type: str):
+        """Decorator to register event handlers"""
+        def decorator(func):
+            self.handlers[event_type] = func
+            return func
+        return decorator
+
+    def verify_signature(self, payload: bytes, signature: str, timestamp: str) -> bool:
+        """Verify the webhook signature"""
+        # Check timestamp (5 minute window)
+        if int(timestamp) < time.time() - 300:
+            return False
+
+        # Compute expected signature
+        signed_payload = f"{timestamp}.{payload.decode()}"
+        expected = hmac.new(
+            self.secret.encode(),
+            signed_payload.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        return hmac.compare_digest(signature, expected)
+
+    async def handle(self, payload: WebhookPayload) -> Dict[str, Any]:
+        """Process an incoming webhook"""
+        print(f"Processing event: {payload.type} ({payload.id})")
+
+        handler = self.handlers.get(payload.type)
+        if not handler:
+            return {"success": True, "action": "acknowledged"}
+
+        try:
+            result = await handler(payload.data["object"], payload.metadata)
+            return {"success": True, "result": result}
+        except Exception as e:
+            print(f"Error processing {payload.type}: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "should_retry": True
+            }
+
+
+handler = WebhookHandler(WEBHOOK_SECRET)
+
+
+# Register event handlers
+@handler.on("order.created")
+async def handle_order_created(order: Dict, metadata: Dict):
+    """Handle new order creation"""
+    print(f"New order: {order['id']}")
+
+    # Validate required fields
+    if not order.get("customer", {}).get("email"):
+        raise ValueError("Order missing customer email")
+
+    # Create order in local database
+    await db.orders.create(
+        id=order["id"],
+        status=order["status"],
+        customer_email=order["customer"]["email"],
+        total=order["pricing"]["grand_total"]
+    )
+
+    # Send confirmation email
+    await email_service.send_order_confirmation(order)
+
+    return {"action": "order_created", "order_id": order["id"]}
+
+
+@handler.on("order.fulfilled")
+async def handle_order_fulfilled(order: Dict, metadata: Dict):
+    """Handle order fulfillment"""
+    print(f"Order fulfilled: {order['id']}")
+
+    await db.orders.update(order["id"], {
+        "status": "fulfilled",
+        "fulfilled_at": datetime.utcnow()
+    })
+
+    await email_service.send_shipping_notification(order)
+
+    return {"action": "order_fulfilled", "order_id": order["id"]}
+
+
+@handler.on("product.inventory_low")
+async def handle_inventory_low(product: Dict, metadata: Dict):
+    """Handle low inventory alert"""
+    print(f"Low inventory: {product['name']}")
+
+    if product["inventory"]["quantity"] < 10:
+        await notification_service.alert({
+            "type": "low_inventory",
+            "product_id": product["id"],
+            "quantity": product["inventory"]["quantity"]
+        })
+
+    return {"action": "inventory_alerted"}
+
+
+# Webhook endpoint
+@app.post("/api/webhooks")
+async def webhook_endpoint(
+    request: Request,
+    x_webhook_signature: str = Header(None),
+    x_webhook_timestamp: str = Header(None)
+):
+    """Receive and process webhooks"""
+    body = await request.body()
+
+    # Verify signature
+    if not handler.verify_signature(body, x_webhook_signature, x_webhook_timestamp):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    # Parse payload
+    payload_dict = await request.json()
+    payload = WebhookPayload(**payload_dict)
+
+    # Process webhook
+    result = await handler.handle(payload)
+
+    if result["success"]:
+        return {"received": True, **result}
+    elif result.get("should_retry"):
+        raise HTTPException(status_code=500, detail=result["error"])
+    else:
+        return {"received": True, "error": result["error"]}
+```
+
+## Step 3: Implement Idempotency
+
+Prevent duplicate processing when webhooks are retried:
+
+```javascript
+// src/webhooks/idempotency.js
+
+/**
+ * In-memory idempotency store (use Redis in production)
+ * Tracks processed webhook IDs and their results
+ */
+class IdempotencyStore {
+  constructor() {
+    this.processedEvents = new Map();
+    this.ttlSeconds = 24 * 60 * 60; // 24 hours
+  }
+
+  /**
+   * Check if an event has already been processed
+   * @param {string} eventId - The event ID
+   * @returns {object|null} Previous result if exists
+   */
+  get(eventId) {
+    const entry = this.processedEvents.get(eventId);
+
+    if (!entry) return null;
+
+    // Check if expired
+    if (Date.now() > entry.expiresAt) {
+      this.processedEvents.delete(eventId);
+      return null;
+    }
+
+    return entry.result;
+  }
+
+  /**
+   * Record that an event was processed
+   * @param {string} eventId - The event ID
+   * @param {object} result - The processing result
+   */
+  set(eventId, result) {
+    this.processedEvents.set(eventId, {
+      result,
+      expiresAt: Date.now() + this.ttlSeconds * 1000,
+      processedAt: Date.now(),
+    });
+  }
+
+  /**
+   * Atomic check-and-set operation
+   * @param {string} eventId - The event ID
+   * @param {Function} processFn - Function to process if not already processed
+   * @returns {object} Result with isNew flag
+   */
+  async withIdempotency(eventId, processFn) {
+    // Check if already processed
+    const existing = this.get(eventId);
+    if (existing) {
+      return { result: existing, isNew: false };
+    }
+
+    // Process the event
+    const result = await processFn();
+
+    // Record the result
+    this.set(eventId, result);
+
+    return { result, isNew: true };
+  }
+}
+
+// Singleton instance
+export const idempotencyStore = new IdempotencyStore();
+```
+
+### Updated Handler with Idempotency
+
+```javascript
+// Updated webhook processing with idempotency
+app.post("/api/webhooks", async (req, res) => {
+  const signature = req.headers["x-webhook-signature"];
+  const timestamp = req.headers["x-webhook-timestamp"];
+
+  if (!webhookHandler.verifySignature(req.body, signature, timestamp)) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  const payload = JSON.parse(req.body);
+
+  // Use idempotency to prevent duplicate processing
+  const { result, isNew } = await idempotencyStore.withIdempotency(
+    payload.id,
+    () => webhookHandler.handle(payload),
+  );
+
+  if (isNew) {
+    console.log(`New event processed: ${payload.type}`);
+  } else {
+    console.log(`Duplicate event ignored: ${payload.type} (${payload.id})`);
+  }
+
+  res.status(200).json({ received: true, ...result });
+});
+```
+
+## Step 4: Test Your Webhook Handler
+
+### Using the CLI
+
+```bash
+# Send a test webhook
+zephyr webhooks test --event order.created --endpoint https://your-domain.com/api/webhooks
+```
+
+### Using cURL
+
+```bash
+# Generate a test signature
+TIMESTAMP=$(date +%s)
+PAYLOAD='{"id":"evt_test123","type":"order.created","data":{"object":{"id":"ord_test"}}}'
+SIGNATURE=$(echo -n "${TIMESTAMP}.${PAYLOAD}" | openssl dgst -sha256 -hmac "whsec_test_secret" | cut -d' ' -f2)
+
+# Send test webhook
+curl -X POST https://your-domain.com/api/webhooks \
+  -H "Content-Type: application/json" \
+  -H "X-Webhook-Signature: ${SIGNATURE}" \
+  -H "X-Webhook-Timestamp: ${TIMESTAMP}" \
+  -d "${PAYLOAD}"
+```
+
+### Local Testing with ngrok
+
+```bash
+# Install ngrok
+npm install -g ngrok
+
+# Start your local server
+npm run dev
+
+# In another terminal, start ngrok
+ngrok http 3000
+
+# Use the ngrok URL to register your webhook
+# https://abc123.ngrok.io/api/webhooks
+```
+
+## Step 5: Production Considerations
+
+### Health Checks
+
+```javascript
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    webhooks: {
+      registered: webhookHandler.eventHandlers.size,
+      active: true,
+    },
+  });
+});
+```
+
+### Metrics and Monitoring
+
+```javascript
+// Track webhook metrics
+const webhookMetrics = {
+  received: 0,
+  succeeded: 0,
+  failed: 0,
+  retried: 0,
+  avgProcessingTime: 0,
+};
+
+app.post("/api/webhooks", async (req, res) => {
+  const startTime = Date.now();
+  webhookMetrics.received++;
+
+  // ... processing code ...
+
+  const processingTime = Date.now() - startTime;
+  updateMetrics(processingTime, success);
+
+  // Send to monitoring
+  metricsClient.gauge("webhook.processing_time", processingTime);
+  metricsClient.increment("webhook.received");
+});
+
+// Prometheus metrics endpoint
+app.get("/metrics", (req, res) => {
+  res.set("Content-Type", "text/plain");
+  res.send(`
+# HELP zephyr_webhooks_received Total webhooks received
+# TYPE zephyr_webhooks_received counter
+zephyr_webhooks_received ${webhookMetrics.received}
+
+# HELP zephyr_webhooks_failed Total webhooks failed
+# TYPE zephyr_webhooks_failed counter
+zephyr_webhooks_failed ${webhookMetrics.failed}
+
+# HELP zephyr_webhook_processing_time_seconds Webhook processing duration
+# TYPE zephyr_webhook_processing_time_seconds histogram
+zephyr_webhook_processing_time_seconds_bucket{le="0.1"} ${processingTimeBuckets[0.1]}
+  `);
+});
+```
+
+### Graceful Shutdown
+
+```javascript
+// Handle shutdown signals
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down gracefully...");
+
+  // Stop accepting new requests
+  server.close(() => {
+    console.log("HTTP server closed");
+  });
+
+  // Wait for in-flight requests to complete
+  await sleep(5000);
+
+  // Close database connections
+  await db.close();
+
+  console.log("Shutdown complete");
+  process.exit(0);
+});
+```
+
+## Event Types Reference
+
+### Order Events
+
+| Event             | Description       | Trigger                       |
+| ----------------- | ----------------- | ----------------------------- |
+| `order.created`   | New order placed  | Customer completes checkout   |
+| `order.updated`   | Order modified    | Address change, notes added   |
+| `order.paid`      | Payment confirmed | Payment processor confirms    |
+| `order.fulfilled` | Order shipped     | Fulfillment center ships      |
+| `order.cancelled` | Order cancelled   | Customer or admin cancels     |
+| `order.refunded`  | Refund processed  | Refund approved and processed |
+
+### Product Events
+
+| Event                            | Description       | Trigger                   |
+| -------------------------------- | ----------------- | ------------------------- |
+| `product.created`                | New product added | Product creation complete |
+| `product.updated`                | Product modified  | Any product field updated |
+| `product.deleted`                | Product removed   | Product deleted           |
+| `product.inventory_low`          | Low stock alert   | Inventory below threshold |
+| `product.inventory_out_of_stock` | Out of stock      | Inventory reaches zero    |
+
+### Customer Events
+
+| Event              | Description     | Trigger                    |
+| ------------------ | --------------- | -------------------------- |
+| `customer.created` | New customer    | First order or signup      |
+| `customer.updated` | Profile changed | Customer updates info      |
+| `customer.deleted` | Account deleted | Customer requests deletion |
+
+## Troubleshooting
+
+### Common Issues
+
+**Signature verification failing:**
+
+- Ensure you're using the raw request body, not parsed JSON
+- Check that timestamp is within 5 minutes
+- Verify the signing secret matches your dashboard
+
+**Events not triggering:**
+
+- Check webhook status in dashboard
+- Verify your endpoint is publicly accessible
+- Check server logs for errors
+
+**Duplicate events:**
+
+- Implement idempotency (covered in Step 3)
+- Check your response times - slow responses may cause retries
+
+## Next Steps
+
+- [Batch Processing Tutorial](/tutorials/batch-processing) - Handle high-volume event processing
+- [Environment Configuration Guide](/guides/environments) - Manage different environments
+- [Error Handling Guide](/guides/error-handling) - Build robust error handling
+- [Rate Limits Guide](/guides/rate-limits) - Understand rate limit handling

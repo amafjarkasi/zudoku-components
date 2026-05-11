@@ -1,0 +1,826 @@
+---
+title: Orders API
+description: Complete guide to order management, fulfillment, and lifecycle
+---
+
+
+The Orders API handles the complete order lifecycle from cart creation to delivery. Process thousands of orders per minute with automatic inventory deduction, tax calculation, payment processing, and fulfillment routing.
+
+## Order Lifecycle
+
+Orders flow through a defined lifecycle from creation to completion:
+
+<Mermaid chart={`
+stateDiagram-v2
+    [*] --> CREATED
+    CREATED --> PENDING: Payment Initiated
+    PENDING --> PAID: Payment Confirmed
+    PAID --> PROCESSING: Fulfillment Queued
+    PROCESSING --> SHIPPED: Carrier Pickup
+    SHIPPED --> DELIVERED: Completed
+    
+    CREATED --> CANCELLED
+    PENDING --> CANCELLED
+    PAID --> CANCELLED
+    PROCESSING --> CANCELLED
+    
+    PENDING --> EXPIRED: Timeout
+    EXPIRED --> CANCELLED
+    
+    DELIVERED --> RETURNED
+    RETURNED --> REFUNDED
+    PAID --> REFUNDED
+`} />
+
+### Order Status Details
+
+| Status | Description | Trigger | Can Transition To |
+|--------|-------------|---------|-------------------|
+| `created` | Order created, awaiting payment | Customer completes checkout | `pending`, `cancelled` |
+| `pending` | Payment pending | Payment initiated | `paid`, `cancelled`, `expired` |
+| `paid` | Payment confirmed | Payment successful | `processing`, `cancelled` |
+| `processing` | Order queued for fulfillment | Payment verified | `shipped`, `cancelled` |
+| `shipped` | Order shipped, in transit | Carrier pickup | `delivered` |
+| `delivered` | Order delivered successfully | Delivery confirmation | `returned` |
+| `cancelled` | Order cancelled | Customer/admin action | None (terminal) |
+| `refunded` | Payment refunded | Refund processed | None (terminal) |
+| `returned` | Items returned to warehouse | Return received | `refunded` |
+| `expired` | Payment window expired | Timeout (usually 15 min) | `cancelled` |
+
+## Order Object
+
+### Complete Order Structure
+
+```json
+{
+  "id": "ord_abc123xyz789",
+  "order_number": "ORD-2026-001234",
+  "status": "paid",
+  "customer_id": "cust_def456uvw123",
+  "email": "sarah.chen@example.com",
+  "phone": "+1-555-0123",
+  "currency": "USD",
+  "created_at": "2026-05-10T15:42:00Z",
+  "updated_at": "2026-05-10T15:45:00Z",
+  "processed_at": "2026-05-10T15:45:00Z",
+  "items": [
+    {
+      "id": "item_abc123",
+      "product_id": "prod_123",
+      "variant_id": "var_456",
+      "name": "Premium Wireless Headphones",
+      "sku": "SH-2024-BLK",
+      "quantity": 2,
+      "unit_price": 199.99,
+      "discount_amount": 20.00,
+      "tax_amount": 32.00,
+      "total": 379.98,
+      "metadata": {
+        "gift_wrap": true,
+        "gift_message": "Happy Birthday!"
+      },
+      "fulfillment": {
+        "status": "pending",
+        "quantity": 2,
+        "tracking_numbers": []
+      }
+    }
+  ],
+  "billing_address": {
+    "first_name": "Sarah",
+    "last_name": "Chen",
+    "line1": "742 Evergreen Terrace",
+    "line2": "Apt 4B",
+    "city": "Portland",
+    "state": "OR",
+    "postal_code": "97201",
+    "country": "US",
+    "phone": "+1-555-0123"
+  },
+  "shipping_address": {
+    "first_name": "Sarah",
+    "last_name": "Chen",
+    "line1": "742 Evergreen Terrace",
+    "line2": "Apt 4B",
+    "city": "Portland",
+    "state": "OR",
+    "postal_code": "97201",
+    "country": "US",
+    "phone": "+1-555-0123"
+  },
+  "pricing": {
+    "subtotal": 399.98,
+    "discount": -40.00,
+    "shipping": 0.00,
+    "tax": 32.00,
+    "total": 391.98,
+    "currency": "USD"
+  },
+  "discounts": [
+    {
+      "code": "SUMMER20",
+      "type": "percentage",
+      "value": 10,
+      "amount": 40.00
+    }
+  ],
+  "shipping": {
+    "method": "standard",
+    "carrier": "USPS",
+    "service": "Priority Mail",
+    "rate": 0.00,
+    "estimated_delivery": "2026-05-13T20:00:00Z"
+  },
+  "payment": {
+    "method": "credit_card",
+    "provider": "stripe",
+    "payment_method_id": "pm_card_visa_ending4242",
+    "status": "paid",
+    "amount": 391.98,
+    "captured_at": "2026-05-10T15:45:00Z"
+  },
+  "fulfillments": [
+    {
+      "id": "ful_abc123",
+      "status": "pending",
+      "tracking_company": "USPS",
+      "tracking_numbers": [],
+      "tracking_urls": [],
+      "created_at": "2026-05-10T15:45:00Z"
+    }
+  ],
+  "metadata": {
+    "source": "web",
+    "campaign": "summer_sale_2026",
+    "affiliate_id": "aff_123"
+  },
+  "customer": {
+    "id": "cust_def456uvw123",
+    "email": "sarah.chen@example.com",
+    "first_name": "Sarah",
+    "last_name": "Chen",
+    "orders_count": 5,
+    "total_spent": 1234.56,
+    "average_order_value": 246.91
+  }
+}
+```
+
+## API Endpoints
+
+### Create Order
+
+Create a new order from checkout or directly.
+
+```bash
+POST /v1/orders
+```
+
+**Request Body:**
+
+```json
+{
+  "customer_id": "cust_def456uvw123",
+  "email": "sarah.chen@example.com",
+  "items": [
+    {
+      "variant_id": "var_shirt_red_m",
+      "quantity": 2,
+      "unit_price": 29.99
+    }
+  ],
+  "billing_address": {
+    "first_name": "Sarah",
+    "last_name": "Chen",
+    "line1": "742 Evergreen Terrace",
+    "city": "Portland",
+    "state": "OR",
+    "postal_code": "97201",
+    "country": "US"
+  },
+  "shipping_address": {
+    "first_name": "Sarah",
+    "last_name": "Chen",
+    "line1": "742 Evergreen Terrace",
+    "city": "Portland",
+    "state": "OR",
+    "postal_code": "97201",
+    "country": "US"
+  },
+  "shipping_method": "standard",
+  "coupon_code": "SUMMER20",
+  "metadata": {
+    "source": "web"
+  }
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/orders" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d @order.json
+```
+
+**Response:**
+
+```json
+{
+  "id": "ord_abc123xyz789",
+  "order_number": "ORD-2026-001234",
+  "status": "created",
+  "total": 53.98,
+  "created_at": "2026-05-10T15:42:00Z"
+}
+```
+
+### Get Order
+
+Retrieve a single order by ID or order number.
+
+```bash
+GET /v1/orders/{id}
+```
+
+**Path Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Order ID or order number |
+
+**Example Request:**
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/orders/ord_abc123xyz789" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json"
+```
+
+### List Orders
+
+Retrieve a paginated list of orders with filtering.
+
+```bash
+GET /v1/orders
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number (default: 1) |
+| `per_page` | integer | No | Items per page (default: 20, max: 100) |
+| `status` | string | No | Filter by status |
+| `customer_id` | string | No | Filter by customer ID |
+| `email` | string | No | Filter by customer email |
+| `created_after` | string | No | ISO 8601 date |
+| `created_before` | string | No | ISO 8601 date |
+| `sort` | string | No | Sort field (`created_at`, `total`, `updated_at`) |
+| `order` | string | No | Sort order (`asc`, `desc`) |
+
+**Example Request:**
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/orders?status=shipped&page=1&per_page=20" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json"
+```
+
+### Update Order
+
+Update order details (status, address, etc.).
+
+```bash
+PUT /v1/orders/{id}
+```
+
+**Request Body:**
+
+```json
+{
+  "status": "processing",
+  "shipping_address": {
+    "line1": "123 New Street",
+    "city": "Seattle",
+    "state": "WA",
+    "postal_code": "98101"
+  },
+  "metadata": {
+    "updated_by": "admin"
+  }
+}
+```
+
+### Cancel Order
+
+Cancel an order.
+
+```bash
+POST /v1/orders/{id}/cancel
+```
+
+**Request Body:**
+
+```json
+{
+  "reason": "customer_request",
+  "notes": "Customer requested cancellation via email"
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/orders/ord_abc123xyz789/cancel" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "customer_request",
+    "notes": "Customer requested cancellation"
+  }'
+```
+
+### Refund Order
+
+Process a refund for an order.
+
+```bash
+POST /v1/orders/{id}/refund
+```
+
+**Request Body:**
+
+```json
+{
+  "amount": 391.98,
+  "reason": "customer_request",
+  "items": [
+    {
+      "item_id": "item_abc123",
+      "quantity": 2
+    }
+  ]
+}
+```
+
+<Callout type="info">
+  **Refund Policy:** Refunds can only be processed for orders in `paid`, `shipped`, or `delivered` status. Partial refunds are supported.
+</Callout>
+
+## Fulfillment
+
+### Create Fulfillment
+
+Ship items from an order.
+
+```bash
+POST /v1/orders/{id}/fulfillments
+```
+
+**Request Body:**
+
+```json
+{
+  "location_id": "loc_nyc",
+  "tracking_company": "fedex",
+  "tracking_numbers": ["123456789012"],
+  "notify_customer": true,
+  "items": [
+    {
+      "item_id": "item_abc123",
+      "quantity": 2
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "ful_abc123",
+  "order_id": "ord_abc123xyz789",
+  "status": "in_transit",
+  "tracking_company": "fedex",
+  "tracking_numbers": ["123456789012"],
+  "tracking_urls": ["https://www.fedex.com/fedextrack/?trknbr=123456789012"],
+  "created_at": "2026-05-10T16:00:00Z"
+}
+```
+
+### List Fulfillments
+
+Get all fulfillments for an order.
+
+```bash
+GET /v1/orders/{id}/fulfillments
+```
+
+## Order Modifications
+
+### Add Items (Pre-Shipment)
+
+Add items to an existing order before it ships.
+
+```bash
+POST /v1/orders/{id}/items
+```
+
+**Request Body:**
+
+```json
+{
+  "items": [
+    {
+      "variant_id": "var_accessory_001",
+      "quantity": 1,
+      "unit_price": 9.99
+    }
+  ]
+}
+```
+
+### Remove Items
+
+Remove items from an order.
+
+```bash
+DELETE /v1/orders/{id}/items/{item_id}
+```
+
+### Update Item Quantity
+
+Update the quantity of an item.
+
+```bash
+PUT /v1/orders/{id}/items/{item_id}
+```
+
+**Request Body:**
+
+```json
+{
+  "quantity": 3
+}
+```
+
+### Update Shipping Address
+
+Change the shipping address (only possible before order is processed).
+
+```bash
+PUT /v1/orders/{id}/shipping_address
+```
+
+**Request Body:**
+
+```json
+{
+  "first_name": "Sarah",
+  "last_name": "Chen",
+  "line1": "123 New Street",
+  "line2": "Apt 4B",
+  "city": "Seattle",
+  "state": "WA",
+  "postal_code": "98101",
+  "country": "US",
+  "phone": "+1-555-0123"
+}
+```
+
+<Callout type="info">
+  **Modification Window:** Address changes are only allowed while order status is `pending` or `paid`. Once in `processing`, the order is locked for fulfillment.
+</Callout>
+
+## Bulk Operations
+
+### Bulk Update Status
+
+Update multiple orders at once.
+
+```bash
+PUT /v1/orders/bulk
+```
+
+**Request Body:**
+
+```json
+{
+  "filters": {
+    "status": "processing",
+    "warehouse": "west-coast-1"
+  },
+  "action": {
+    "status": "shipped",
+    "tracking_number": "auto-generated",
+    "carrier": "fedex"
+  }
+}
+```
+
+### Bulk Cancel
+
+Cancel multiple orders.
+
+```bash
+POST /v1/orders/bulk/cancel
+```
+
+**Request Body:**
+
+```json
+{
+  "order_ids": ["ord_abc123", "ord_def456", "ord_ghi789"],
+  "reason": "bulk_cancellation",
+  "notes": "System error in inventory"
+}
+```
+
+## Order Analytics
+
+Track key order metrics:
+
+| Metric | Formula | Description |
+|--------|---------|-------------|
+| **Average Order Value (AOV)** | `total_revenue / number_of_orders` | Average amount spent per order |
+| **Order Fulfillment Rate** | `orders_delivered / orders_placed * 100` | Percentage of orders successfully delivered |
+| **Cancellation Rate** | `orders_cancelled / orders_placed * 100` | Percentage of orders cancelled |
+| **Return Rate** | `orders_returned / orders_delivered * 100` | Percentage of delivered orders returned |
+| **Refund Rate** | `total_refunded / total_revenue * 100` | Percentage of revenue refunded |
+| **Repeat Customer Rate** | `customers_with_multiple_orders / total_customers * 100` | Customer loyalty metric |
+
+### Get Order Analytics
+
+```bash
+GET /v1/orders/analytics
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `from` | string | No | Start date (ISO 8601) |
+| `to` | string | No | End date (ISO 8601) |
+| `group_by` | string | No | Grouping (`day`, `week`, `month`) |
+
+**Response:**
+
+```json
+{
+  "summary": {
+    "total_orders": 1250,
+    "total_revenue": 156789.00,
+    "average_order_value": 125.43,
+    "fulfillment_rate": 98.5,
+    "cancellation_rate": 1.5,
+    "return_rate": 2.3,
+    "refund_rate": 1.2
+  },
+  "trends": [
+    {
+      "date": "2026-05-01",
+      "orders": 50,
+      "revenue": 6250.00
+    },
+    {
+      "date": "2026-05-02",
+      "orders": 55,
+      "revenue": 6875.00
+    }
+  ]
+}
+```
+
+## Best Practices
+
+### 1. Implement Idempotency
+
+Use idempotency keys to prevent duplicate orders:
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/orders" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Idempotency-Key: 12345678-1234-1234-1234-123456789abc" \
+  -H "Content-Type: application/json" \
+  -d @order.json
+```
+
+```javascript
+// Generate idempotency key
+const idempotencyKey = crypto.randomUUID();
+
+// Store in localStorage to handle retries
+localStorage.setItem('lastOrderKey', idempotencyKey);
+
+// Use in API call
+const response = await fetch('https://api.zephyr.com/v1/orders', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Idempotency-Key': idempotencyKey,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(orderData)
+});
+```
+
+### 2. Handle Webhooks
+
+Set up webhooks for real-time order updates:
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/webhooks" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com/webhooks/orders",
+    "events": [
+      "order.created",
+      "order.paid",
+      "order.shipped",
+      "order.delivered",
+      "order.cancelled"
+    ],
+    "secret": "whsec_abc123..."
+  }'
+```
+
+```javascript
+// Handle order webhooks
+app.post('/webhooks/orders', (req, res) => {
+  const signature = req.headers['x-webhook-signature'];
+  const payload = req.rawBody;
+
+  // Verify signature
+  if (!verifyWebhookSignature(payload, signature, webhookSecret)) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  const event = req.headers['x-webhook-event'];
+  const order = req.body.data;
+
+  switch (event) {
+    case 'order.created':
+      sendOrderConfirmationEmail(order);
+      break;
+    case 'order.paid':
+      initiateFulfillment(order);
+      break;
+    case 'order.shipped':
+      sendShippingNotification(order);
+      break;
+    case 'order.delivered':
+      requestProductReview(order);
+      break;
+    case 'order.cancelled':
+      processCancellation(order);
+      break;
+  }
+
+  res.status(200).send('OK');
+});
+```
+
+### 3. Implement Retry Logic
+
+Handle transient errors with exponential backoff:
+
+```javascript
+async function createOrder(orderData, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://api.zephyr.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': orderData.idempotencyKey
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+
+      const error = await response.json();
+
+      // Don't retry on validation errors
+      if (error.error.code === 'validation_error') {
+        throw error;
+      }
+
+      // Retry on rate limits or server errors
+      if (response.status === 429 || response.status >= 500) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      throw error;
+
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      console.log(`Attempt ${attempt} failed, retrying...`);
+    }
+  }
+}
+```
+
+### 4. Validate Inventory Before Creating Order
+
+Check inventory before allowing checkout:
+
+```javascript
+async function validateCartItems(cartItems) {
+  const variantIds = cartItems.map(item => item.variant_id);
+
+  const response = await fetch(
+    `https://api.zephyr.com/v1/variants?ids=${variantIds.join(',')}`,
+    {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    }
+  );
+
+  const variants = await response.json();
+
+  const outOfStockItems = [];
+
+  cartItems.forEach(item => {
+    const variant = variants.data.find(v => v.id === item.variant_id);
+    if (!variant || variant.inventory_quantity < item.quantity) {
+      outOfStockItems.push({
+        item: item,
+        available: variant ? variant.inventory_quantity : 0
+      });
+    }
+  });
+
+  if (outOfStockItems.length > 0) {
+    throw new Error('Some items are out of stock', {
+      cause: outOfStockItems
+    });
+  }
+
+  return true;
+}
+```
+
+### 5. Implement Order Search
+
+Build efficient order search for your dashboard:
+
+```javascript
+async function searchOrders(filters) {
+  const params = new URLSearchParams();
+
+  if (filters.status) params.append('status', filters.status);
+  if (filters.customerEmail) params.append('email', filters.customerEmail);
+  if (filters.orderNumber) params.append('order_number', filters.orderNumber);
+  if (filters.dateFrom) params.append('created_after', filters.dateFrom);
+  if (filters.dateTo) params.append('created_before', filters.dateTo);
+  if (filters.page) params.append('page', filters.page);
+  if (filters.perPage) params.append('per_page', filters.perPage);
+
+  const response = await fetch(
+    `https://api.zephyr.com/v1/orders?${params.toString()}`,
+    {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    }
+  );
+
+  return await response.json();
+}
+```
+
+## Error Handling
+
+### Common Order Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `order_not_found` | Order doesn't exist | Verify order ID |
+| `invalid_status` | Invalid status transition | Check current status |
+| `inventory_insufficient` | Not enough inventory | Update inventory or deny order |
+| `payment_failed` | Payment processing failed | Check payment method |
+| `address_invalid` | Invalid shipping address | Verify address format |
+| `coupon_expired` | Coupon has expired | Use valid coupon |
+| `order_locked` | Order cannot be modified | Order is in processing |
+
+## Next Steps
+
+- [Products API](/ecommerce/products) - Manage product catalog
+- [Inventory API](/ecommerce/inventory) - Track inventory levels
+- [Shipping API](/ecommerce/shipping) - Configure shipping options
+- [Webhooks](/integrations/webhooks) - Real-time order updates
+- [Analytics](/analytics/events) - Track order-related events
+
+## Need Help?
+
+- **API Reference:** Check our [Order API Reference](/api/ecommerce)
+- **Support:** Open a ticket in your [dashboard](https://dashboard.zephyr.com/support)
+- **Community:** Join our [Slack](https://zephyr.dev/slack)

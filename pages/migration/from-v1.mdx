@@ -1,0 +1,170 @@
+---
+title: Migration from v1
+---
+
+
+Our v1 API will reach end-of-life on **December 31, 2026**. This guide walks through migrating to the current v2 API with detailed endpoint mapping and code examples.
+
+## Why Migrate?
+
+| Improvement | v1 | v2 |
+|---|---|---|
+| Response times | ~250ms | ~50ms |
+| Rate limits | 100/min | 1000/min |
+| Error handling | inconsistent | standardized |
+| Webhooks | polling required | push-based |
+| SDKs | basic | full-featured |
+
+<Callout type="info">
+  **Migration Deadline:** v1 API will stop accepting requests on December 31, 2026. Start your migration now to avoid service disruption.
+</Callout>
+
+## Key Changes
+
+### Base URL
+
+```diff
+- https://api.example.com/v1
++ https://api.example.com/v2
+```
+
+### Authentication
+
+```diff
+- Header: X-API-Key: api_key_here
++ Header: Authorization: Bearer api_key_here
+```
+
+### Response Envelope
+
+```diff
+- { "data": { "id": "123", "name": "Product" } }
+
++ { "id": "123", "name": "Product" }
+```
+
+## Endpoint Mapping
+
+### Products
+
+| v1 Endpoint | v2 Endpoint | Notes |
+|---|---|---|
+| `GET /products` | `GET /v2/products` | New cursor pagination |
+| `POST /products` | `POST /v2/products` | Same |
+| `GET /products/:id` | `GET /v2/products/:id` | Same |
+| `PUT /products/:id` | `PATCH /v2/products/:id` | PATCH vs PUT |
+| `DELETE /products/:id` | `DELETE /v2/products/:id` | Now returns 204 |
+
+### Orders
+
+| v1 Endpoint | v2 Endpoint | Notes |
+|---|---|---|
+| `GET /orders` | `GET /v2/orders` | New filters |
+| `POST /orders` | `POST /v2/orders` | Different body schema |
+| `GET /orders/:id` | `GET /v2/orders/:id` | Same |
+| `PUT /orders/:id/cancel` | `POST /v2/orders/:id/cancel` | Method change |
+
+### Authentication
+
+| v1 Endpoint | v2 Endpoint | Notes |
+|---|---|---|
+| `POST /auth/token` | `POST /v2/auth/token` | Same |
+| `DELETE /auth/token` | `DELETE /v2/auth/token/revoke` | Different endpoint |
+| `GET /auth/userinfo` | `GET /v2/users/me` | New endpoint |
+
+## Migration Script
+
+We provide a migration script to automate most of the process:
+
+```bash
+npm install @premium-api/migration-tool
+
+premium-migrate generate-report \
+  --api-key v1_api_key_here \
+  --output report.json
+
+premium-migrate apply-fixes \
+  --api-key v2_api_key_here \
+  --report report.json
+```
+
+## Code Examples
+
+### Node.js Migration
+
+```typescript
+// v1 Code
+const response = await fetch('https://api.example.com/v1/products', {
+  headers: { 'X-API-Key': apiKey }
+});
+const { data: products } = await response.json();
+
+// v2 Code
+const response = await fetch('https://api.example.com/v2/products', {
+  headers: { 'Authorization': `Bearer ${apiKey}` }
+});
+const products = await response.json();
+```
+
+### Python Migration
+
+```python
+import requests
+
+response = requests.get(
+    'https://api.example.com/v1/products',
+    headers={'X-API-Key': api_key}
+)
+products = response.json()['data']
+
+response = requests.get(
+    'https://api.example.com/v2/products',
+    headers={'Authorization': f'Bearer {api_key}'}
+)
+products = response.json()
+```
+
+## Error Code Mapping
+
+| v1 Error | v2 Error |
+|---|---|
+| `ERR_NOT_FOUND` | `RESOURCE_NOT_FOUND` |
+| `ERR_INVALID_TOKEN` | `INVALID_AUTH_TOKEN` |
+| `ERR_RATE_LIMIT` | `RATE_LIMIT_EXCEEDED` |
+| `ERR_VALIDATION` | `VALIDATION_ERROR` |
+| `ERR_INTERNAL` | `INTERNAL_ERROR` |
+
+## Testing Your Migration
+
+### Sandbox Environment
+
+Test v2 API in our sandbox before going live:
+
+```bash
+export PREMIUM_API_KEY="sandbox_v2_key_here"
+export PREMIUM_ENV="sandbox"
+```
+
+### Parallel Testing
+
+Run both APIs simultaneously to compare responses:
+
+```python
+def test_migration_parallel():
+    v1_response = call_v1_api("/products")
+    v2_response = call_v2_api("/products")
+
+    assert normalize(v1_response) == normalize(v2_response)
+```
+
+## Rollback Plan
+
+If issues arise after migration:
+
+1. **Instant rollback** - v1 API remains available for 30 days post-migration
+2. **Feature flags** - Use `X-API-Version` header to switch between versions
+3. **Gradual rollout** - Migrate one endpoint at a time using our proxy tool
+
+<Callout type="info">
+  **Support:** Contact api-support@zephyr.dev for migration assistance. Enterprise customers get dedicated migration support.
+</Callout>

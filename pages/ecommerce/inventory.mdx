@@ -1,0 +1,506 @@
+---
+title: Inventory Management
+description: Track stock levels, manage warehouses, and automate restocking
+---
+
+
+The Inventory Management API provides real-time stock tracking across multiple warehouses, automated restocking alerts, and comprehensive inventory reporting. Keep your catalog in sync across all sales channels with sub-second inventory updates.
+
+## Inventory Concepts
+
+### Stock Levels
+
+Each product variant maintains its own inventory count. Real-time updates are propagated to all connected storefronts within 100ms via our event streaming infrastructure.
+
+```json
+{
+  "variant_id": "var_abc123",
+  "sku": "SNEAKERS-BLACK-10",
+  "quantity_available": 247,
+  "quantity_reserved": 12,
+  "quantity_committed": 89,
+  "reorder_threshold": 50,
+  "warehouse_location": "west-coast-1",
+  "last_updated": "2026-05-10T14:32:00Z"
+}
+```
+
+### Inventory States
+
+| State | Description | Duration |
+|-------|-------------|----------|
+| `available` | Ready to sell | Until reserved or sold |
+| `reserved` | Added to cart, held for customer | 15 minutes (configurable) |
+| `committed` | Checkout initiated, payment pending | 5 minutes |
+| `sold` | Payment confirmed, deducted from available | Permanent |
+| `released` | Cart abandoned or payment failed | Immediate |
+
+### Reservation System
+
+When a customer adds an item to their cart, we reserve inventory for 15 minutes (configurable). This prevents overselling during flash sales or high-traffic events.
+
+<Callout type="info">
+  **Tip:** Adjust the reservation duration based on your checkout flow length. A longer duration may increase conversion but risks overselling during high traffic.
+</Callout>
+
+## Multi-Warehouse Support
+
+### Warehouse Locations
+
+Distribute inventory across fulfillment centers to reduce shipping times:
+
+```json
+{
+  "variant_id": "var_abc123",
+  "locations": [
+    {
+      "warehouse_id": "west-coast-1",
+      "warehouse_name": "Los Angeles Distribution Center",
+      "available": 100,
+      "reserved": 5,
+      "committed": 20,
+      "bin_location": "A-12-34"
+    },
+    {
+      "warehouse_id": "east-coast-1",
+      "warehouse_name": "New Jersey Distribution Center",
+      "available": 75,
+      "reserved": 3,
+      "committed": 15,
+      "bin_location": "B-07-21"
+    },
+    {
+      "warehouse_id": "eu-west-1",
+      "warehouse_name": "Amsterdam Distribution Center",
+      "available": 50,
+      "reserved": 2,
+      "committed": 10,
+      "bin_location": "C-03-15"
+    }
+  ]
+}
+```
+
+### Intelligent Fulfillment Routing
+
+Our system automatically selects the optimal warehouse based on:
+
+- **Geographic proximity** to delivery address
+- **Inventory availability** across locations
+- **Shipping cost** optimization
+- **Delivery speed** requirements
+- **Carrier capabilities** at each location
+
+## API Endpoints
+
+### Get Inventory Levels
+
+Retrieve inventory levels for one or more variants.
+
+```bash
+GET /v1/inventory
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `variant_ids` | array | No | Array of variant IDs |
+| `warehouse_id` | string | No | Filter by warehouse |
+| `sku` | string | No | Filter by SKU |
+| `low_stock` | boolean | No | Only return low stock items |
+| `out_of_stock` | boolean | No | Only return out of stock items |
+
+**Example Request:**
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/inventory?variant_ids=var_abc123,var_def456" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json"
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "variant_id": "var_abc123",
+      "sku": "SNEAKERS-BLACK-10",
+      "total_available": 225,
+      "total_reserved": 10,
+      "total_committed": 45,
+      "locations": [...]
+    }
+  ]
+}
+```
+
+### Adjust Inventory
+
+Manually adjust inventory levels for returns, damages, or audits.
+
+```bash
+POST /v1/inventory/adjust
+```
+
+**Request Body:**
+
+```json
+{
+  "variant_id": "var_abc123",
+  "warehouse_id": "west-coast-1",
+  "quantity": 5,
+  "reason": "return",
+  "reference_id": "ret_987654",
+  "notes": "Customer return - good condition",
+  "performed_by": "user_123"
+}
+```
+
+**Adjustment Reasons:**
+
+| Reason | Description | Effect |
+|--------|-------------|--------|
+| `return` | Items returned by customer | Increase |
+| `damage` | Items damaged in warehouse | Decrease |
+| `loss` | Items lost or stolen | Decrease |
+| `found` | Previously lost items found | Increase |
+| `count` | Physical inventory count | Adjust to actual |
+| `transfer` | Transfer between warehouses | Adjust both locations |
+| `shrinkage` | Unexplained loss | Decrease |
+| `adjustment` | General correction | +/- based on quantity |
+
+### Transfer Inventory
+
+Transfer inventory between warehouses.
+
+```bash
+POST /v1/inventory/transfer
+```
+
+**Request Body:**
+
+```json
+{
+  "variant_id": "var_abc123",
+  "from_warehouse": "west-coast-1",
+  "to_warehouse": "east-coast-1",
+  "quantity": 50,
+  "reason": "stock_rebalancing",
+  "estimated_arrival": "2026-05-15T00:00:00Z"
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/inventory/transfer" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "variant_id": "var_abc123",
+    "from_warehouse": "west-coast-1",
+    "to_warehouse": "east-coast-1",
+    "quantity": 50,
+    "reason": "stock_rebalancing"
+  }'
+```
+
+### Set Reorder Thresholds
+
+Configure automatic reorder alerts.
+
+```bash
+PUT /v1/inventory/{variant_id}/reorder
+```
+
+**Request Body:**
+
+```json
+{
+  "reorder_threshold": 50,
+  "reorder_quantity": 100,
+  "safety_stock": 20,
+  "lead_time_days": 7,
+  "auto_reorder": true,
+  "supplier_id": "sup_abc123"
+}
+```
+
+## Backorder Management
+
+When demand exceeds supply, enable backorders to capture lost sales:
+
+### Enable Backorders
+
+```json
+{
+  "variant_id": "var_abc123",
+  "inventory": {
+    "allow_backorder": true,
+    "max_backorder_quantity": 3,
+    "expected_restock_date": "2026-05-20T00:00:00Z",
+    "backorder_message": "Expected to ship by May 20, 2026"
+  }
+}
+```
+
+### Backorder Settings
+
+| Setting | Description | Example |
+|---------|-------------|---------|
+| `allow_backorder` | Accept orders when out of stock | `true` |
+| `max_backorder_quantity` | Max units per backorder | `3` |
+| `expected_restock_date` | Communicate restock date | `"2026-05-20"` |
+| `backorder_message` | Custom message to customers | `"Expected to ship by May 20"` |
+
+<Callout type="info">
+  **Warning:** Backorders can impact customer satisfaction if delivery expectations aren't met. Only enable for products with reliable restock dates.
+</Callout>
+
+## Real-Time Sync
+
+Subscribe to inventory webhooks to keep your systems updated:
+
+### Set Up Inventory Webhooks
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/webhooks" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com/webhooks/inventory",
+    "events": [
+      "inventory.updated",
+      "inventory.low_stock",
+      "inventory.out_of_stock",
+      "inventory.reorder_threshold_reached"
+    ],
+    "secret": "whsec_abc123..."
+  }'
+```
+
+### Webhook Payload Examples
+
+**Low Stock Alert:**
+
+```json
+{
+  "event": "inventory.low_stock",
+  "data": {
+    "variant_id": "var_abc123",
+    "sku": "SNEAKERS-BLACK-10",
+    "quantity_available": 23,
+    "reorder_threshold": 50,
+    "warehouse_id": "west-coast-1",
+    "timestamp": "2026-05-10T14:35:00Z"
+  }
+}
+```
+
+**Inventory Updated:**
+
+```json
+{
+  "event": "inventory.updated",
+  "data": {
+    "variant_id": "var_abc123",
+    "warehouse_id": "west-coast-1",
+    "previous_quantity": 50,
+    "new_quantity": 55,
+    "adjustment": 5,
+    "reason": "return",
+    "timestamp": "2026-05-10T14:35:00Z"
+  }
+}
+```
+
+## Inventory Reports
+
+Generate detailed inventory health reports:
+
+### Health Report
+
+```bash
+GET /v1/inventory/reports/health
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `start_date` | string | No | Start date (ISO 8601) |
+| `end_date` | string | No | End date (ISO 8601) |
+| `warehouse` | string | No | Filter by warehouse |
+
+**Response:**
+
+```json
+{
+  "summary": {
+    "total_skus": 1250,
+    "total_value": 456789.00,
+    "stock_turnover_rate": 4.5,
+    "average_days_of_supply": 45,
+    "stockout_frequency": 12,
+    "carrying_cost": 45678.90
+  },
+  "metrics": [
+    {
+      "metric": "Stock Turnover Rate",
+      "value": 4.5,
+      "description": "How many times inventory is sold and replaced over period",
+      "trend": "up"
+    },
+    {
+      "metric": "Days of Supply",
+      "value": 45,
+      "description": "Average days until stock exhaustion at current sales pace",
+      "trend": "stable"
+    },
+    {
+      "metric": "Stockout Frequency",
+      "value": 12,
+      "description": "Number of SKUs that reached zero during period",
+      "trend": "down"
+    },
+    {
+      "metric": "Carrying Cost",
+      "value": 45678.90,
+      "description": "Total cost of holding inventory including warehousing",
+      "trend": "up"
+    }
+  ]
+}
+```
+
+### Low Stock Report
+
+```bash
+GET /v1/inventory/reports/low-stock
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "variant_id": "var_abc123",
+      "sku": "SNEAKERS-BLACK-10",
+      "product_name": "Premium Sneakers",
+      "current_stock": 23,
+      "reorder_threshold": 50,
+      "days_of_supply_remaining": 3,
+      "urgency": "high",
+      "recommended_action": "reorder_immediately"
+    }
+  ]
+}
+```
+
+## Best Practices
+
+### 1. Set Appropriate Reorder Thresholds
+
+Calculate reorder points based on lead time and demand:
+
+```
+Reorder Point = (Average Daily Sales × Lead Time) + Safety Stock
+```
+
+**Example:**
+- Average daily sales: 10 units
+- Lead time: 7 days
+- Safety stock: 20 units
+- **Reorder Point:** (10 × 7) + 20 = 90 units
+
+### 2. Implement Cycle Counting
+
+Regularly count a subset of inventory rather than full physical counts:
+
+| Category | Frequency | Example Items |
+|----------|-----------|---------------|
+| A-items (high value) | Monthly | Electronics, jewelry |
+| B-items (medium value) | Quarterly | Clothing, accessories |
+| C-items (low value) | Biannually | Small accessories, consumables |
+
+### 3. Monitor Inventory Accuracy
+
+Track inventory accuracy to identify and resolve discrepancies:
+
+```javascript
+async function calculateInventoryAccuracy(warehouseId) {
+  const theoretical = await getTheoreticalInventory(warehouseId);
+  const actual = await performPhysicalCount(warehouseId);
+
+  const accuracy = (actual / theoretical) * 100;
+
+  if (accuracy < 95) {
+    // Alert team to investigate
+    alertTeam(`Low inventory accuracy: ${accuracy.toFixed(2)}% at ${warehouseId}`);
+  }
+
+  return accuracy;
+}
+```
+
+### 4. Use Safety Stock
+
+Maintain safety stock for critical items to buffer against demand variability:
+
+```json
+{
+  "variant_id": "var_abc123",
+  "safety_stock": 20,
+  "safety_stock_days": 5,
+  "safety_stock_calculation": "max_daily_sales × max_lead_time"
+}
+```
+
+### 5. Track Lot Numbers for Expiration
+
+Use lot tracking for products with expiration dates:
+
+```json
+{
+  "variant_id": "var_food_123",
+  "track_by_lot": true,
+  "lots": [
+    {
+      "lot_number": "LOT-2026-05-10",
+      "quantity": 100,
+      "expiry_date": "2026-12-31",
+      "manufacture_date": "2026-05-01",
+      "batch_number": "BATCH-001"
+    }
+  ]
+}
+```
+
+## Error Handling
+
+### Common Inventory Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `insufficient_inventory` | Not enough inventory to adjust | Check current levels before adjustment |
+| `invalid_warehouse` | Warehouse doesn't exist | Verify warehouse ID |
+| `invalid_lot` | Lot number doesn't exist | Verify lot number for lot-tracked items |
+| `transfer_failed` | Transfer failed | Check destination warehouse capacity |
+| `negative_inventory` | Attempt to set negative inventory | Ensure adjustments don't result in negative stock |
+
+## Next Steps
+
+- [Products API](/ecommerce/products) - Manage product catalog
+- [Orders API](/ecommerce/orders) - Process orders and fulfillment
+- [Warehouses](/ecommerce/warehouses) - Manage warehouse locations
+- [Webhooks](/integrations/webhooks) - Real-time inventory updates
+- [Best Practices](/best-practices/performance) - Inventory optimization
+
+## Need Help?
+
+- **API Reference:** Check our [Inventory API Reference](/api/ecommerce)
+- **Support:** Open a ticket in your [dashboard](https://dashboard.zephyr.com/support)
+- **Community:** Join our [Slack](https://zephyr.dev/slack)

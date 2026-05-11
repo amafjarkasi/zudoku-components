@@ -1,0 +1,1031 @@
+---
+title: Complete E-Commerce Flow
+description: End-to-end e-commerce integration covering product catalog, cart, checkout, and fulfillment
+---
+
+This guide walks through building a complete e-commerce flow using the Zephyr API. We'll cover everything from browsing products to order fulfillment.
+
+## Flow Overview
+
+<Mermaid
+  chart={`
+flowchart TD
+    P[Products Browse] -->|Select| C[Cart]
+    C -->|Manage Items| C
+    C -->|Checkout| CH[Checkout]
+    CH -->|Payment| O[Orders]
+    O -->|Fulfill| F[Fulfillment]
+    F -->|Ship| W[Webhooks]
+    W -->|Notify| A[Analytics]
+    
+    P -->|Inventory Check| I[Inventory]
+    C -->|Track| AN1[Analytics]
+    CH -->|Purchase| AN2[Analytics]
+    O -->|Status Update| AN3[Analytics]
+    
+    style P fill:#f3e8ff,stroke:#7c3aed
+    style C fill:#dbeafe,stroke:#1e40af
+    style CH fill:#fef3c7,stroke:#92400e
+    style O fill:#dcfce7,stroke:#166534
+    style F fill:#fee2e2,stroke:#991b1b
+`}
+/>
+
+## Step 1: Browse Products
+
+### Product Listing with Filtering
+
+```javascript
+// src/services/product-service.js
+
+/**
+ * Fetch products with filtering, sorting, and pagination
+ */
+async function getProducts(options = {}) {
+  const {
+    page = 1,
+    perPage = 20,
+    category = null,
+    minPrice = null,
+    maxPrice = null,
+    search = null,
+    sortBy = "created_at",
+    sortOrder = "desc",
+    status = "active",
+  } = options;
+
+  // Build query parameters
+  const params = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+    status,
+    sort: sortBy,
+    order: sortOrder,
+  });
+
+  if (category) params.append("category", category);
+  if (minPrice) params.append("min_price", minPrice.toString());
+  if (maxPrice) params.append("max_price", maxPrice.toString());
+  if (search) params.append("search", search);
+
+  const response = await client.get(`/products?${params.toString()}`);
+
+  return {
+    products: response.data,
+    pagination: {
+      page: response.meta.page,
+      perPage: response.meta.per_page,
+      totalPages: response.meta.total_pages,
+      total: response.meta.total,
+    },
+  };
+}
+
+/**
+ * Get featured products for homepage
+ */
+async function getFeaturedProducts(limit = 10) {
+  const response = await client.get(
+    `/products?status=active&per_page=${limit}&sort=created_at&order=desc`,
+  );
+  return response.data;
+}
+
+/**
+ * Get products by category
+ */
+async function getProductsByCategory(categorySlug, options = {}) {
+  return getProducts({
+    category: categorySlug,
+    ...options,
+  });
+}
+```
+
+### Product Search
+
+```javascript
+/**
+ * Search products by name, description, or SKU
+ */
+async function searchProducts(query, options = {}) {
+  return getProducts({
+    search: query,
+    ...options,
+  });
+}
+
+/**
+ * Get product recommendations based on a product
+ */
+async function getRecommendations(productId, limit = 6) {
+  // Get the product to find its category/tags
+  const product = await client.get(`/products/${productId}`);
+
+  // Find related products by category or tags
+  const response = await client.get(
+    `/products?status=active&per_page=${limit}&category=${product.categories[0]}`,
+  );
+
+  // Filter out the original product
+  return response.data.filter((p) => p.id !== productId);
+}
+```
+
+### Product Detail Page
+
+```javascript
+/**
+ * Get full product details including all variants
+ */
+async function getProductDetails(productId) {
+  const product = await client.get(`/products/${productId}`);
+
+  // Enhance with variant options for size/color selectors
+  const variantOptions = extractVariantOptions(product.variants);
+
+  return {
+    ...product,
+    variantOptions,
+    // Computed fields
+    hasVariants: product.variants.length > 0,
+    minPrice: Math.min(...product.variants.map((v) => v.price)),
+    maxPrice: Math.max(...product.variants.map((v) => v.price)),
+    inStock: product.variants.some(
+      (v) => v.available && v.inventory_quantity > 0,
+    ),
+  };
+}
+
+/**
+ * Extract unique variant options (e.g., colors, sizes)
+ */
+function extractVariantOptions(variants) {
+  const options = {};
+
+  for (const variant of variants) {
+    for (const [key, value] of Object.entries(variant.attributes || {})) {
+      if (!options[key]) {
+        options[key] = new Set();
+      }
+      options[key].add(value);
+    }
+  }
+
+  // Convert Sets to Arrays
+  return Object.fromEntries(
+    Object.entries(options).map(([key, values]) => [key, Array.from(values)]),
+  );
+}
+```
+
+## Step 2: Cart Management
+
+### Cart Service
+
+```javascript
+// src/services/cart-service.js
+
+/**
+ * CartItem represents an item in the shopping cart
+ */
+class CartItem {
+  constructor(variant, quantity = 1) {
+    this.variantId = variant.id;
+    this.productId = variant.product_id;
+    this.name = variant.name;
+    this.sku = variant.sku;
+    this.price = variant.price;
+    this.quantity = quantity;
+    this.attributes = variant.attributes;
+    this.image = variant.image;
+  }
+
+  get total() {
+    return this.price * this.quantity;
+  }
+}
+
+/**
+ * CartService manages the shopping cart
+ */
+class CartService {
+  constructor() {
+    this.items = new Map();
+    this.discountCode = null;
+    this.sessionId = this.generateSessionId();
+  }
+
+  generateSessionId() {
+    return `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Add item to cart
+   */
+  addItem(variant, quantity = 1) {
+    const existing = this.items.get(variant.id);
+
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      this.items.set(variant.id, new CartItem(variant, quantity));
+    }
+
+    this.persist();
+    return this.getSummary();
+  }
+
+  /**
+   * Update item quantity
+   */
+  updateQuantity(variantId, quantity) {
+    const item = this.items.get(variantId);
+
+    if (!item) {
+      throw new Error("Item not found in cart");
+    }
+
+    if (quantity <= 0) {
+      this.items.delete(variantId);
+    } else {
+      item.quantity = quantity;
+    }
+
+    this.persist();
+    return this.getSummary();
+  }
+
+  /**
+   * Remove item from cart
+   */
+  removeItem(variantId) {
+    this.items.delete(variantId);
+    this.persist();
+    return this.getSummary();
+  }
+
+  /**
+   * Apply discount code
+   */
+  async applyDiscountCode(code) {
+    try {
+      const response = await client.post("/discounts/validate", { code });
+
+      if (response.valid) {
+        this.discountCode = {
+          code: response.code,
+          type: response.type, // 'percentage' or 'fixed'
+          value: response.value,
+          minimumOrder: response.minimum_order,
+        };
+        this.persist();
+        return { success: true, discount: this.discountCode };
+      }
+
+      return { success: false, error: response.message };
+    } catch (error) {
+      return { success: false, error: "Invalid discount code" };
+    }
+  }
+
+  /**
+   * Calculate cart totals
+   */
+  async calculateTotals() {
+    const subtotal = this.getSubtotal();
+    let discount = 0;
+
+    // Apply discount
+    if (this.discountCode) {
+      if (this.discountCode.type === "percentage") {
+        discount = subtotal * (this.discountCode.value / 100);
+      } else {
+        discount = this.discountCode.value;
+      }
+    }
+
+    // Calculate shipping
+    const shipping = await this.calculateShipping();
+
+    // Calculate tax (estimate)
+    const taxRate = 0.08; // 8% tax rate
+    const taxableAmount = subtotal - discount + shipping;
+    const tax = taxableAmount * taxRate;
+
+    // Grand total
+    const grandTotal = subtotal - discount + shipping + tax;
+
+    return {
+      subtotal,
+      discount,
+      shipping,
+      tax,
+      grandTotal,
+      itemCount: this.getItemCount(),
+    };
+  }
+
+  /**
+   * Estimate shipping based on items
+   */
+  async calculateShipping() {
+    if (this.items.size === 0) return 0;
+
+    // Get shipping rates from API based on items
+    const response = await client.post("/shipping/rates", {
+      items: Array.from(this.items.values()).map((item) => ({
+        variant_id: item.variantId,
+        quantity: item.quantity,
+      })),
+    });
+
+    // Return cheapest rate as default
+    const cheapestRate = response.rates.sort((a, b) => a.price - b.price)[0];
+    return cheapestRate?.price || 0;
+  }
+
+  /**
+   * Get cart summary
+   */
+  getSummary() {
+    return {
+      items: Array.from(this.items.values()),
+      itemCount: this.getItemCount(),
+      discountCode: this.discountCode,
+    };
+  }
+
+  getSubtotal() {
+    return Array.from(this.items.values()).reduce(
+      (sum, item) => sum + item.total,
+      0,
+    );
+  }
+
+  getItemCount() {
+    return Array.from(this.items.values()).reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    );
+  }
+
+  /**
+   * Persist cart to storage
+   */
+  persist() {
+    const data = {
+      items: Array.from(this.items.entries()),
+      discountCode: this.discountCode,
+      sessionId: this.sessionId,
+    };
+
+    localStorage.setItem("cart", JSON.stringify(data));
+  }
+
+  /**
+   * Restore cart from storage
+   */
+  load() {
+    const data = localStorage.getItem("cart");
+
+    if (data) {
+      const parsed = JSON.parse(data);
+      this.sessionId = parsed.sessionId;
+      this.items = new Map(parsed.items);
+      this.discountCode = parsed.discountCode;
+    }
+
+    return this.getSummary();
+  }
+
+  /**
+   * Clear the cart
+   */
+  clear() {
+    this.items.clear();
+    this.discountCode = null;
+    this.persist();
+  }
+}
+
+export const cart = new CartService();
+```
+
+### Frontend Cart Component
+
+```javascript
+// src/components/Cart.jsx
+
+function Cart() {
+  const [cartSummary, setCartSummary] = useState(cart.load());
+  const [totals, setTotals] = useState(null);
+
+  // Update totals when cart changes
+  useEffect(() => {
+    async function loadTotals() {
+      const calculated = await cart.calculateTotals();
+      setTotals(calculated);
+    }
+    loadTotals();
+  }, [cartSummary]);
+
+  function handleAddToCart(variant) {
+    const result = cart.addItem(variant, 1);
+    setCartSummary({ ...result });
+  }
+
+  function handleUpdateQuantity(variantId, quantity) {
+    const result = cart.updateQuantity(variantId, quantity);
+    setCartSummary({ ...result });
+  }
+
+  function handleRemoveItem(variantId) {
+    const result = cart.removeItem(variantId);
+    setCartSummary({ ...result });
+  }
+
+  async function handleApplyDiscount(code) {
+    const result = await cart.applyDiscountCode(code);
+
+    if (result.success) {
+      const calculated = await cart.calculateTotals();
+      setTotals(calculated);
+      setCartSummary({ ...cart.getSummary() });
+    }
+
+    return result;
+  }
+
+  return (
+    <div className="cart">
+      <CartItems
+        items={cartSummary.items}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemove={handleRemoveItem}
+      />
+
+      {totals && (
+        <CartTotals totals={totals} onApplyDiscount={handleApplyDiscount} />
+      )}
+    </div>
+  );
+}
+```
+
+## Step 3: Checkout
+
+### Checkout Service
+
+```javascript
+// src/services/checkout-service.js
+
+/**
+ * CheckoutService handles the complete checkout flow
+ */
+class CheckoutService {
+  constructor(cart) {
+    this.cart = cart;
+    this.step = "information"; // information -> shipping -> payment -> confirmation
+  }
+
+  /**
+   * Create a checkout session
+   */
+  async createCheckoutSession(returnUrl, cancelUrl) {
+    const totals = await this.cart.calculateTotals();
+
+    const response = await client.post(
+      "/checkout/sessions",
+      {
+        cart: {
+          items: this.cart.items.map((item) => ({
+            variant_id: item.variantId,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        },
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        discount_code: this.cart.discountCode?.code,
+        shipping: totals.shipping,
+        tax: totals.tax,
+        grand_total: totals.grandTotal,
+      },
+      {
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
+      },
+    );
+
+    return response;
+  }
+
+  /**
+   * Validate inventory before checkout
+   */
+  async validateInventory() {
+    const response = await client.post("/checkout/validate", {
+      items: Array.from(this.cart.items.values()).map((item) => ({
+        variant_id: item.variantId,
+        quantity: item.quantity,
+      })),
+    });
+
+    return {
+      valid: response.valid,
+      unavailable: response.unavailable || [],
+      low_stock: response.low_stock || [],
+    };
+  }
+
+  /**
+   * Create the order
+   */
+  async createOrder(customer, shippingAddress, paymentMethod) {
+    const totals = await this.cart.calculateTotals();
+
+    // Final inventory validation
+    const inventoryCheck = await this.validateInventory();
+
+    if (!inventoryCheck.valid) {
+      throw new CheckoutError(
+        "Some items are no longer available",
+        "inventory_changed",
+        inventoryCheck.unavailable,
+      );
+    }
+
+    // Track checkout started event
+    await analytics.track("checkout_started", {
+      cart_value: totals.subtotal,
+      item_count: this.cart.getItemCount(),
+      discount_code: this.cart.discountCode?.code,
+    });
+
+    // Create the order
+    const order = await client.post("/orders", {
+      line_items: Array.from(this.cart.items.values()).map((item) => ({
+        variant_id: item.variantId,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      customer: {
+        email: customer.email,
+        first_name: customer.firstName,
+        last_name: customer.lastName,
+        phone: customer.phone,
+      },
+      shipping_address: {
+        first_name: shippingAddress.firstName,
+        last_name: shippingAddress.lastName,
+        line1: shippingAddress.address1,
+        line2: shippingAddress.address2,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        postal_code: shippingAddress.postalCode,
+        country: shippingAddress.country,
+        phone: shippingAddress.phone,
+      },
+      billing_address: shippingAddress.useAsBilling
+        ? null // Use shipping as billing
+        : shippingAddress.billingAddress,
+      shipping: {
+        method: shippingAddress.shippingMethod,
+        price: totals.shipping,
+      },
+      discount:
+        totals.discount > 0
+          ? {
+              code: this.cart.discountCode?.code,
+              amount: totals.discount,
+            }
+          : null,
+      payment_method: paymentMethod.method,
+      payment_details: {
+        token: paymentMethod.token, // Payment provider token
+      },
+      metadata: {
+        session_id: this.cart.sessionId,
+        source: "web",
+      },
+    });
+
+    // Track purchase event
+    await analytics.track("purchase_completed", {
+      order_id: order.id,
+      revenue: order.pricing.grand_total,
+      tax: order.pricing.tax,
+      shipping: order.pricing.shipping,
+      discount: order.pricing.discount,
+      payment_method: paymentMethod.method,
+    });
+
+    // Clear the cart
+    this.cart.clear();
+
+    return order;
+  }
+}
+
+/**
+ * Custom error for checkout failures
+ */
+class CheckoutError extends Error {
+  constructor(message, code, details = {}) {
+    super(message);
+    this.name = "CheckoutError";
+    this.code = code;
+    this.details = details;
+  }
+}
+```
+
+### Checkout Flow Implementation
+
+```javascript
+// src/pages/Checkout.jsx
+
+function CheckoutPage() {
+  const [step, setStep] = useState("information");
+  const [customer, setCustomer] = useState({});
+  const [shippingAddress, setShippingAddress] = useState({});
+  const [shippingMethod, setShippingMethod] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState(null);
+  const [order, setOrder] = useState(null);
+  const [error, setError] = useState(null);
+
+  async function handleCreateOrder() {
+    try {
+      setError(null);
+
+      const checkoutService = new CheckoutService(cart);
+      const newOrder = await checkoutService.createOrder(
+        customer,
+        { ...shippingAddress, shippingMethod },
+        paymentMethod,
+      );
+
+      setOrder(newOrder);
+      setStep("confirmation");
+    } catch (err) {
+      if (err instanceof CheckoutError) {
+        setError({
+          message: err.message,
+          code: err.code,
+          details: err.details,
+        });
+      } else {
+        setError({ message: "An unexpected error occurred" });
+      }
+    }
+  }
+
+  return (
+    <div className="checkout-page">
+      {step === "information" && (
+        <InformationStep
+          customer={customer}
+          onCustomerChange={setCustomer}
+          onNext={() => setStep("shipping")}
+        />
+      )}
+
+      {step === "shipping" && (
+        <ShippingStep
+          address={shippingAddress}
+          onAddressChange={setShippingAddress}
+          onSelectMethod={setShippingMethod}
+          onBack={() => setStep("information")}
+          onNext={() => setStep("payment")}
+        />
+      )}
+
+      {step === "payment" && (
+        <PaymentStep
+          paymentMethod={paymentMethod}
+          onPaymentChange={setPaymentMethod}
+          onBack={() => setStep("shipping")}
+          onSubmit={handleCreateOrder}
+          error={error}
+        />
+      )}
+
+      {step === "confirmation" && order && <ConfirmationStep order={order} />}
+    </div>
+  );
+}
+```
+
+## Step 4: Order Management
+
+### Order Service
+
+```javascript
+// src/services/order-service.js
+
+/**
+ * Get orders for a customer
+ */
+async function getCustomerOrders(customerId, options = {}) {
+  const { page = 1, perPage = 10, status = null } = options;
+
+  const params = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+  });
+
+  if (status) params.append("status", status);
+
+  const response = await client.get(
+    `/customers/${customerId}/orders?${params.toString()}`,
+  );
+
+  return {
+    orders: response.data,
+    pagination: response.meta,
+  };
+}
+
+/**
+ * Get order details
+ */
+async function getOrder(orderId) {
+  const order = await client.get(`/orders/${orderId}`);
+
+  // Enhance with timeline/status history
+  const timeline = buildOrderTimeline(order);
+
+  return {
+    ...order,
+    timeline,
+    isFulfilled: order.fulfillment?.status === "fulfilled",
+    isCancelled: order.status === "cancelled",
+    canCancel: canCancelOrder(order),
+    canReturn: canReturnOrder(order),
+  };
+}
+
+/**
+ * Build order timeline from status history
+ */
+function buildOrderTimeline(order) {
+  const events = [];
+
+  events.push({
+    type: "created",
+    timestamp: order.created_at,
+    title: "Order placed",
+    description: `Order #${order.id}`,
+  });
+
+  if (order.payment?.captured_at) {
+    events.push({
+      type: "paid",
+      timestamp: order.payment.captured_at,
+      title: "Payment confirmed",
+      description: `Paid ${formatCurrency(order.pricing.grand_total)}`,
+    });
+  }
+
+  if (order.fulfillment?.fulfilled_at) {
+    events.push({
+      type: "fulfilled",
+      timestamp: order.fulfillment.fulfilled_at,
+      title: "Order shipped",
+      description: order.fulfillment.tracking_number
+        ? `Tracking: ${order.fulfillment.tracking_number}`
+        : "Preparing for shipment",
+    });
+  }
+
+  if (order.status === "cancelled") {
+    events.push({
+      type: "cancelled",
+      timestamp: order.cancelled_at,
+      title: "Order cancelled",
+      description: order.cancellation_reason || "Cancelled by customer",
+    });
+  }
+
+  return events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+/**
+ * Check if order can be cancelled
+ */
+function canCancelOrder(order) {
+  // Can cancel if not yet fulfilled
+  return (
+    !["fulfilled", "cancelled"].includes(order.status) &&
+    !order.fulfillment?.fulfilled_at
+  );
+}
+
+/**
+ * Check if order can be returned
+ */
+function canReturnOrder(order) {
+  const daysSinceDelivery = order.fulfillment?.fulfilled_at
+    ? (Date.now() - new Date(order.fulfillment.fulfilled_at)) /
+      (1000 * 60 * 60 * 24)
+    : 0;
+
+  return order.fulfillment?.status === "fulfilled" && daysSinceDelivery <= 30; // 30-day return window
+}
+
+/**
+ * Cancel an order
+ */
+async function cancelOrder(orderId, reason) {
+  const order = await client.post(`/orders/${orderId}/cancel`, {
+    reason,
+  });
+
+  await analytics.track("order_cancelled", {
+    order_id: orderId,
+    reason,
+  });
+
+  return order;
+}
+
+/**
+ * Update shipping address (before fulfillment)
+ */
+async function updateShippingAddress(orderId, newAddress) {
+  return client.put(`/orders/${orderId}/shipping-address`, newAddress);
+}
+```
+
+### Order History Component
+
+```javascript
+// src/components/OrderHistory.jsx
+
+function OrderHistory({ customerId }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    loadOrders();
+  }, [customerId, page]);
+
+  async function loadOrders() {
+    setLoading(true);
+
+    try {
+      const result = await getCustomerOrders(customerId, { page });
+      setOrders(result.orders);
+    } catch (error) {
+      console.error("Failed to load orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return <OrderSkeleton />;
+  }
+
+  return (
+    <div className="order-history">
+      <h2>Order History</h2>
+
+      {orders.length === 0 ? (
+        <p className="no-orders">You haven't placed any orders yet.</p>
+      ) : (
+        <div className="orders-list">
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} />
+          ))}
+        </div>
+      )}
+
+      <Pagination
+        currentPage={page}
+        totalPages={pagination.totalPages}
+        onPageChange={setPage}
+      />
+    </div>
+  );
+}
+
+function OrderCard({ order }) {
+  return (
+    <div className="order-card">
+      <div className="order-header">
+        <span className="order-id">#{order.id}</span>
+        <span className={`order-status status-${order.status}`}>
+          {order.status}
+        </span>
+      </div>
+
+      <div className="order-date">{formatDate(order.created_at)}</div>
+
+      <div className="order-items">
+        {order.line_items.slice(0, 3).map((item) => (
+          <div key={item.id} className="order-item">
+            <span className="item-name">{item.product_name}</span>
+            <span className="item-qty">x{item.quantity}</span>
+          </div>
+        ))}
+        {order.line_items.length > 3 && (
+          <div className="more-items">
+            +{order.line_items.length - 3} more items
+          </div>
+        )}
+      </div>
+
+      <div className="order-total">
+        Total: {formatCurrency(order.pricing.grand_total)}
+      </div>
+
+      <div className="order-actions">
+        <a href={`/orders/${order.id}`}>View Details</a>
+        {canCancelOrder(order) && (
+          <button onClick={() => handleCancel(order.id)}>Cancel Order</button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Step 5: Fulfillment Webhooks
+
+```javascript
+// src/webhooks/fulfillment.js
+
+/**
+ * Handle order fulfillment webhooks
+ */
+webhookHandler.on("order.fulfilled", async (order, metadata) => {
+  console.log(`Order ${order.id} fulfilled`);
+
+  // Update local order status
+  await db.orders.update(order.id, {
+    status: "fulfilled",
+    fulfilled_at: new Date(),
+    tracking_number: order.fulfillment.tracking_number,
+    carrier: order.fulfillment.carrier,
+  });
+
+  // Send shipping confirmation email
+  await emailService.sendShippingConfirmation({
+    to: order.customer.email,
+    orderId: order.id,
+    trackingNumber: order.fulfillment.tracking_number,
+    carrier: order.fulfillment.carrier,
+    estimatedDelivery: order.fulfillment.estimated_delivery,
+  });
+
+  // Track in analytics
+  await analytics.track("order_shipped", {
+    order_id: order.id,
+    carrier: order.fulfillment.carrier,
+    shipping_method: order.shipping?.method,
+  });
+
+  return { action: "fulfillment_processed" };
+});
+
+webhookHandler.on("order.cancelled", async (order, metadata) => {
+  console.log(`Order ${order.id} cancelled: ${order.cancellation_reason}`);
+
+  // Update local order status
+  await db.orders.update(order.id, {
+    status: "cancelled",
+    cancelled_at: new Date(),
+    cancellation_reason: order.cancellation_reason,
+  });
+
+  // If payment was captured, initiate refund
+  if (order.payment?.captured) {
+    await paymentService.refund(order.id, order.pricing.grand_total);
+  }
+
+  // Restore inventory
+  for (const item of order.line_items) {
+    await inventoryService.restore(item.variant_id, item.quantity);
+  }
+
+  // Send cancellation email
+  await emailService.sendOrderCancellation({
+    to: order.customer.email,
+    orderId: order.id,
+    reason: order.cancellation_reason,
+    refundAmount: order.payment?.captured ? order.pricing.grand_total : 0,
+  });
+
+  return { action: "cancellation_processed" };
+});
+```
+
+## Next Steps
+
+- [Webhook Handler Tutorial](/tutorials/webhook-handler) - Handle real-time events
+- [First Integration Tutorial](/tutorials/first-integration) - Get started with the API
+- [Analytics Implementation Guide](/examples/analytics-implementation) - Track user behavior
+- [Error Handling Guide](/guides/error-handling) - Handle errors gracefully

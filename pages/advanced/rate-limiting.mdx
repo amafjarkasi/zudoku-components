@@ -1,0 +1,174 @@
+---
+title: Rate Limiting
+---
+
+
+Every API key is subject to rate limits to ensure fair usage and platform stability. This guide explains the limit tiers, how to read the response headers, and best practices for staying within limits.
+
+## Limit Tiers
+
+| Plan | Requests / minute | Requests / day | Burst |
+|---|---|---|---|
+| **Free** | 60 | 5,000 | 80 |
+| **Growth** | 600 | 100,000 | 900 |
+| **Business** | 3,000 | 1,000,000 | 5,000 |
+| **Enterprise** | Custom | Custom | Custom |
+
+Rate limits are applied **per API key**, not per IP address. If you use multiple keys, each has its own independent quota.
+
+## Response Headers
+
+Every API response includes rate limit headers so you can monitor your consumption in real time:
+
+```http
+HTTP/2 200 OK
+X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 543
+X-RateLimit-Reset: 1715287200
+X-RateLimit-Policy: sliding-window
+Retry-After: 0
+```
+
+| Header | Description |
+|---|---|
+| `X-RateLimit-Limit` | Total requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining before you hit the limit |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+| `X-RateLimit-Policy` | Algorithm used (`sliding-window` or `fixed-window`) |
+| `Retry-After` | Seconds to wait before retrying (present on `429` responses only) |
+
+## When You're Rate Limited
+
+When you exceed your limit, you'll receive a `429 Too Many Requests` response:
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "You have exceeded your rate limit. Retry after 12 seconds.",
+    "retryAfterSeconds": 12,
+    "limitWindow": "1m",
+    "limit": 60
+  }
+}
+```
+
+<Callout type="info">
+  Do **not** retry immediately on a `429`. Always respect the `Retry-After` header. Aggressive retrying without backoff will extend your ban window and may trigger automatic throttling escalation.
+</Callout>
+
+## Implementing Retry Logic
+
+Use exponential backoff with jitter to handle `429` and transient `5xx` errors gracefully.
+
+### JavaScript / TypeScript
+
+```typescript
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      const retryAfter = Number(response.headers.get("Retry-After") ?? 5);
+      const jitter = Math.random() * 1000; // up to 1s jitter
+      await new Promise((r) => setTimeout(r, retryAfter * 1000 + jitter));
+      continue;
+    }
+
+    if (response.ok) return response;
+    if (response.status >= 500 && attempt < maxRetries - 1) {
+      const backoff = Math.min(1000 * 2 ** attempt + Math.random() * 500, 30000);
+      await new Promise((r) => setTimeout(r, backoff));
+      continue;
+    }
+
+    throw new Error(`Request failed: ${response.status}`);
+  }
+  throw new Error("Max retries exceeded");
+}
+```
+
+### Python
+
+```python
+import time
+import random
+import httpx
+
+def fetch_with_retry(url: str, headers: dict, max_retries: int = 3) -> httpx.Response:
+    for attempt in range(max_retries):
+        response = httpx.get(url, headers=headers)
+
+        if response.status_code == 429:
+            retry_after = int(response.headers.get("Retry-After", 5))
+            jitter = random.uniform(0, 1)
+            time.sleep(retry_after + jitter)
+            continue
+
+        if response.is_success:
+            return response
+
+        if response.status_code >= 500 and attempt < max_retries - 1:
+            backoff = min(1 * (2 ** attempt) + random.uniform(0, 0.5), 30)
+            time.sleep(backoff)
+            continue
+
+        response.raise_for_status()
+
+    raise RuntimeError("Max retries exceeded")
+```
+
+## Strategies for High-Volume Workloads
+
+### 1. Request Batching
+
+Many endpoints support batch operations. Instead of 100 individual product lookups, use the batch endpoint:
+
+```http
+POST /v1/products/batch
+Content-Type: application/json
+
+{
+  "ids": ["prod_01", "prod_02", "prod_03", "...up to 100 IDs"]
+}
+```
+
+This consumes **1 request** instead of N, dramatically improving throughput efficiency.
+
+### 2. Caching
+
+Cache responses aggressively for data that doesn't change frequently. Product catalog data, for example, can typically be cached for 60 seconds without meaningful staleness.
+
+### 3. Webhooks Over Polling
+
+Instead of polling `GET /orders` every few seconds, register a webhook for `order.updated` events. This eliminates polling-induced rate limit pressure entirely.
+
+<Callout type="info">
+  **Estimate your usage**: Before going live, model your expected request volume. If your integration makes 1 API call per user action, and you expect 500 concurrent users, you need at least 500 RPM capacity. Contact sales before launch to ensure you're on the right plan.
+</Callout>
+
+## Checking Your Current Usage
+
+```bash
+curl https://api.zephyr.dev/v1/account/usage \
+  -H "Authorization: Bearer $ZEPHYR_API_KEY"
+```
+
+```json
+{
+  "plan": "growth",
+  "period": "2024-05",
+  "usage": {
+    "requests": {
+      "used": 48320,
+      "limit": 100000,
+      "percentUsed": 48.32
+    },
+    "resetAt": "2024-06-01T00:00:00Z"
+  }
+}
+```

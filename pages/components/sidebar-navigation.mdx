@@ -1,0 +1,178 @@
+---
+title: Sidebar Navigation
+description: Collapsible sidebar menu examples
+---
+
+# Sidebar Navigation
+
+Navigation components for sidebar menus.
+
+## Collapsible Section
+
+<div class="sidebar-demo">
+  <div class="sidebar-section">
+    <button class="sidebar-section-header">
+      <span class="sidebar-section-title">Getting Started</span>
+      <span class="sidebar-section-icon">▼</span>
+    </button>
+    <div class="sidebar-section-content">
+      <a href="/introduction" class="sidebar-link">Introduction</a>
+      <a href="/auth/getting-started" class="sidebar-link sidebar-link--active">Quick Start</a>
+      <a href="/auth/oauth2" class="sidebar-link">Authentication</a>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <button class="sidebar-section-header">
+      <span class="sidebar-section-title">API Reference</span>
+      <span class="sidebar-section-icon">▶</span>
+    </button>
+  </div>
+
+  <div class="sidebar-section">
+    <button class="sidebar-section-header">
+      <span class="sidebar-section-title">Guides</span>
+      <span class="sidebar-section-icon">▶</span>
+    </button>
+  </div>
+</div>
+
+## Navigation Item States
+
+<div class="sidebar-demo">
+  <a href="#" class="sidebar-link">Default Link</a>
+  <a href="#" class="sidebar-link sidebar-link--active">Active Link</a>
+  <a href="#" class="sidebar-link sidebar-link--hover">Hover Link</a>
+  <a href="#" class="sidebar-link sidebar-link--disabled">Disabled Link</a>
+</div>
+
+## With Badges
+
+<div class="sidebar-demo">
+  <a href="/changelog" class="sidebar-link">
+    <span>What's New</span>
+    <span class="sidebar-badge sidebar-badge--new">New</span>
+  </a>
+  <a href="/status" class="sidebar-link">
+    <span>System Status</span>
+    <span class="sidebar-badge sidebar-badge--operational">●</span>
+  </a>
+  <a href="#" class="sidebar-link">
+    <span>Beta Features</span>
+    <span class="sidebar-badge sidebar-badge--beta">Beta</span>
+  </a>
+</div>
+
+<style>{`
+  .sidebar-demo {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 1rem 0;
+    background: var(--card);
+    max-width: 250px;
+  }
+
+  .sidebar-section {
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .sidebar-section-header:hover {
+    background: var(--accent);
+  }
+
+  .sidebar-section-icon {
+    font-size: 0.6rem;
+    color: var(--muted-foreground);
+    transition: transform 0.2s ease;
+  }
+
+  .sidebar-section-header[aria-expanded="true"] .sidebar-section-icon {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-section-content {
+    padding-left: 1rem;
+    margin-top: 0.25rem;
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease;
+  }
+
+  .sidebar-link:hover {
+    color: var(--foreground);
+    background: var(--accent);
+  }
+
+  .sidebar-link--active {
+    color: var(--primary);
+    background: var(--accent);
+    font-weight: 500;
+  }
+
+  .sidebar-link--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .sidebar-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 1rem;
+  }
+
+  .sidebar-badge--new {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .sidebar-badge--beta {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .dark .sidebar-badge--beta {
+    background: #92400e;
+    color: #fef3c7;
+  }
+
+  .sidebar-badge--operational {
+    background: #dcfce7;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .dark .sidebar-badge--operational {
+    background: #166534;
+    color: #dcfce7;
+  }
+`}</style>

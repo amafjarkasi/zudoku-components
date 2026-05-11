@@ -1,0 +1,174 @@
+---
+title: Timeline Component
+description: Vertical timeline for sequences and history
+---
+
+# Timeline Component
+
+Display chronological sequences and history.
+
+## Event Timeline
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="timeline-marker"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">May 11, 2026</div>
+      <div class="timeline-title">API v2.1 Released</div>
+      <div class="timeline-desc">Added batch operations and improved webhook delivery</div>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-marker"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">May 3, 2026</div>
+      <div class="timeline-title">Webhook Reliability Update</div>
+      <div class="timeline-desc">Reduced delivery time from 2s to 200ms</div>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-marker timeline-marker--past"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">April 22, 2026</div>
+      <div class="timeline-title">Go SDK v2.0 Released</div>
+      <div class="timeline-desc">Complete rewrite with improved performance</div>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-marker timeline-marker--past"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">April 1, 2026</div>
+      <div class="timeline-title">Inventory Sync Fixed</div>
+      <div class="timeline-desc">Resolved race condition in stock updates</div>
+    </div>
+  </div>
+</div>
+
+## Step Timeline
+
+<div class="timeline timeline--steps">
+  <div class="timeline-item timeline-item--completed">
+    <div class="timeline-marker">✓</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Account Created</div>
+      <div class="timeline-desc">Sign up and verify your email</div>
+    </div>
+  </div>
+  <div class="timeline-item timeline-item--completed">
+    <div class="timeline-marker">✓</div>
+    <div class="timeline-content">
+      <div class="timeline-title">API Key Generated</div>
+      <div class="timeline-desc">Create your first API key</div>
+    </div>
+  </div>
+  <div class="timeline-item timeline-item--current">
+    <div class="timeline-marker">3</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Make First Request</div>
+      <div class="timeline-desc">Follow the quick start guide</div>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-marker">4</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Go Live</div>
+      <div class="timeline-desc">Deploy to production</div>
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin: 1.5rem 0;
+  }
+
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+  }
+
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+
+  .timeline-marker {
+    position: absolute;
+    left: -1.5rem;
+    top: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: bold;
+    color: var(--primary-foreground);
+    z-index: 1;
+  }
+
+  .timeline-marker--past {
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .timeline-content {
+    padding-left: 0.5rem;
+  }
+
+  .timeline-date {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-desc {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    line-height: 1.4;
+  }
+
+  .timeline--steps::before {
+    background: linear-gradient(to bottom, var(--primary) 0%, var(--border) 100%);
+  }
+
+  .timeline--steps .timeline-marker {
+    background: var(--card);
+    border: 2px solid var(--muted-foreground);
+    color: var(--muted-foreground);
+  }
+
+  .timeline-item--completed .timeline-marker {
+    background: #166534;
+    border-color: #166534;
+    color: white;
+  }
+
+  .timeline-item--current .timeline-marker {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
+  }
+`}</style>

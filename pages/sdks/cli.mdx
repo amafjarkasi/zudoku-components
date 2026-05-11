@@ -1,0 +1,259 @@
+---
+title: CLI Reference
+---
+
+
+The Zephyr CLI provides command-line access to our API for automation, scripting, and development workflows.
+
+## Installation
+
+### macOS / Linux
+
+```bash
+curl -sSL https://get.premium-api.com/cli/install.sh | sh
+```
+
+### Windows
+
+```powershell
+iwr https://get.premium-api.com/cli/install.ps1 | iex
+```
+
+### npm / Node.js
+
+```bash
+npm install -g premium-cli
+```
+
+## Authentication
+
+### Login
+
+```bash
+premium-cli auth login
+```
+
+### API Key Authentication
+
+```bash
+export PREMIUM_API_KEY="your_api_key_here"
+premium-cli config set api_key $PREMIUM_API_KEY
+```
+
+### Verify Authentication
+
+```bash
+premium-cli auth status
+```
+
+## Common Commands
+
+### Products
+
+```bash
+premium-cli products list --limit 100
+
+premium-cli products create \
+  --name "Premium Headphones" \
+  --price 199.99 \
+  --sku "PH-001"
+
+premium-cli products update prod_abc123 --price 179.99
+
+premium-cli products delete prod_abc123
+```
+
+### Orders
+
+```bash
+premium-cli orders list --status paid --limit 50
+
+premium-cli orders get ord_xyz789
+
+premium-cli orders cancel ord_xyz789 --reason "customer_request"
+
+premium-cli orders export \
+  --start-date 2026-04-01 \
+  --end-date 2026-04-30 \
+  --format csv \
+  --output orders.csv
+```
+
+### Webhooks
+
+```bash
+premium-cli webhooks list
+
+premium-cli webhooks create \
+  --url https://your-server.com/webhooks \
+  --events order.created,order.shipped,order.delivered
+
+premium-cli webhooks test wh_abc123 --event order.created
+
+premium-cli webhooks forward --port 3000
+```
+
+### Analytics
+
+```bash
+premium-cli analytics track \
+  --event page_view \
+  --properties '{"page": "/products", "referrer": "google"}'
+
+premium-cli analytics funnel \
+  --steps "page_view,product_viewed,checkout_started,purchase_completed" \
+  --start-date 2026-04-01 \
+  --end-date 2026-04-30
+
+premium-cli analytics export \
+  --events purchase_completed \
+  --start-date 2026-04-01 \
+  --format jsonl \
+  --output events.jsonl
+```
+
+## Scripting Examples
+
+### Bulk Product Updates
+
+```bash
+#!/bin/bash
+
+while IFS=, read -r product_id price; do
+  premium-cli products update "$product_id" --price "$price"
+done < price_updates.csv
+```
+
+### Order Fulfillment Automation
+
+```bash
+#!/bin/bash
+
+while true; do
+  orders=$(premium-cli orders list --status paid --limit 10 --format json)
+
+  for order in $(echo "$orders" | jq -r '.[] | @base64'); do
+    order_data=$(echo "$order" | base64 --decode)
+    order_id=$(echo "$order_data" | jq -r '.id')
+
+    # Generate label
+    premium-cli shipping label create --order-id "$order_id" --carrier fedex
+
+    # Update status
+    premium-cli orders update "$order_id" --status processing
+  done
+
+  sleep 30
+done
+```
+
+### Automated Reporting
+
+```bash
+#!/bin/bash
+
+DATE=$(date -u +"%Y-%m-%d")
+REPORT_FILE="revenue-report-${DATE}.json"
+
+premium-cli analytics metrics \
+  --metrics revenue,orders,average_order_value \
+  --dimensions date,product_category \
+  --start-date "${DATE}T00:00:00Z" \
+  --end-date "${DATE}T23:59:59Z" \
+  --format json \
+  > "$REPORT_FILE"
+
+curl -X POST https://storage.example.com/reports \
+  -H "Authorization: Bearer $STORAGE_KEY" \
+  --data-binary @"$REPORT_FILE"
+```
+
+## Configuration
+
+### Config File Location
+
+- macOS/Linux: `~/.config/premium-cli/config.json`
+- Windows: `%APPDATA%\premium-cli\config.json`
+
+### Config Options
+
+```json
+{
+  "api_key": "your_api_key",
+  "organization_id": "org_abc123",
+  "environment": "production",
+  "output_format": "json",
+  "timeout_seconds": 30,
+  "retry_attempts": 3,
+  "log_level": "info"
+}
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `PREMIUM_API_KEY` | API key for authentication | - |
+| `PREMIUM_ORG_ID` | Organization ID | - |
+| `PREMIUM_ENV` | Environment (production/sandbox) | production |
+| `PREMIUM_OUTPUT` | Default output format | json |
+| `PREMIUM_TIMEOUT` | Request timeout in seconds | 30 |
+
+## Advanced Usage
+
+### Pagination
+
+```bash
+cursor=""
+while true; do
+  response=$(premium-cli products list --cursor "$cursor" --limit 100 --format json)
+  items=$(echo "$response" | jq -r '.items[]')
+
+  for item in $items; do
+    echo "$item"
+  done
+
+  cursor=$(echo "$response" | jq -r '.next_cursor // empty')
+  [ -z "$cursor" ] && break
+done
+```
+
+### Batch Operations
+
+```bash
+premium-cli batch process \
+  --file product-updates.json \
+  --operation products.update \
+  --concurrency 5
+```
+
+### Shell Completion
+
+```bash
+premium-cli completion bash >> ~/.bashrc
+premium-cli completion zsh >> ~/.zshrc
+premium-cli completion powershell >> $PROFILE
+```
+
+## Debugging
+
+### Verbose Output
+
+```bash
+premium-cli orders list --debug --verbose
+```
+
+### Dry Run Mode
+
+```bash
+premium-cli products create \
+  --name "Test Product" \
+  --price 9.99 \
+  --dry-run
+```
+
+### Report Issues
+
+```bash
+premium-cli debug bundle --output debug.zip
+```

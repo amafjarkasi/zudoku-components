@@ -1,0 +1,233 @@
+---
+title: Support Section
+description: Get help and contact support
+---
+
+# Support & Resources
+
+Need help? Here are the best ways to get assistance.
+
+## Quick Help
+
+<div class="support-grid">
+  <a href="/troubleshooting" class="support-card">
+    <div class="support-card-icon">🔧</div>
+    <div class="support-card-title">Troubleshooting Guide</div>
+    <div class="support-card-desc">Common issues and solutions</div>
+  </a>
+
+  <a href="/guides/error-handling" class="support-card">
+    <div class="support-card-icon">📖</div>
+    <div class="support-card-title">Error Reference</div>
+    <div class="support-card-desc">Error codes and meanings</div>
+  </a>
+
+  <a href="/sdks/cli" class="support-card">
+    <div class="support-card-icon">⌨️</div>
+    <div class="support-card-title">CLI Reference</div>
+    <div class="support-card-desc">Command-line tool docs</div>
+  </a>
+
+  <a href="/api" class="support-card">
+    <div class="support-card-icon">📡</div>
+    <div class="support-card-title">API Reference</div>
+    <div class="support-card-desc">Interactive API explorer</div>
+  </a>
+</div>
+
+## Contact Support
+
+<div class="contact-options">
+  <div class="contact-card contact-card--community">
+    <div class="contact-header">
+      <div class="contact-tier">Community</div>
+      <div class="contact-price">Free</div>
+    </div>
+    <div class="contact-features">
+      <div class="contact-feature">✓ Discord community access</div>
+      <div class="contact-feature">✓ GitHub issues & discussions</div>
+      <div class="contact-feature">✓ Public documentation</div>
+      <div class="contact-feature">✓ Response in 2-3 business days</div>
+    </div>
+    <a href="https://discord.gg/zu" class="contact-btn">Join Discord</a>
+  </div>
+
+  <div class="contact-card contact-card--pro">
+    <div class="contact-header">
+      <div class="contact-tier">Pro</div>
+      <div class="contact-price">$49/mo</div>
+    </div>
+    <div class="contact-features">
+      <div class="contact-feature">✓ Priority support queue</div>
+      <div class="contact-feature">✓ Email support</div>
+      <div class="contact-feature">✓ Private Slack channel</div>
+      <div class="contact-feature">✓ Response in 4-8 hours</div>
+    </div>
+    <a href="https://zu.com/pricing" class="contact-btn contact-btn--primary">Upgrade to Pro</a>
+  </div>
+
+  <div class="contact-card contact-card--enterprise">
+    <div class="contact-header">
+      <div class="contact-tier">Enterprise</div>
+      <div class="contact-price">Custom</div>
+    </div>
+    <div class="contact-features">
+      <div class="contact-feature">✓ Dedicated support engineer</div>
+      <div class="contact-feature">✓ 24/7 coverage</div>
+      <div class="contact-feature">✓ SLA guarantees</div>
+      <div class="contact-feature">✓ Custom onboarding</div>
+    </div>
+    <a href="https://zu.com/contact" class="contact-btn contact-btn--enterprise">Contact Sales</a>
+  </div>
+</div>
+
+## Response Times
+
+| Plan | Email | Discord | Phone |
+|------|-------|---------|-------|
+| **Community** | 2-3 business days | 1-2 days | — |
+| **Pro** | 4-8 hours | 1-2 hours | — |
+| **Enterprise** | 1 hour | 15 minutes | Scheduled calls |
+
+<style>{`
+  .support-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .support-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .support-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.15);
+    border-color: var(--primary);
+  }
+
+  .support-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .support-card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .support-card-desc {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .contact-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .contact-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    background: var(--card);
+  }
+
+  .contact-card--pro {
+    border-color: var(--primary);
+    position: relative;
+  }
+
+  .contact-card--pro::before {
+    content: "Popular";
+    position: absolute;
+    top: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .contact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .contact-tier {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .contact-price {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  .contact-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-feature {
+    font-size: 0.85rem;
+    color: var(--foreground);
+  }
+
+  .contact-btn {
+    display: block;
+    text-align: center;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+    color: var(--foreground);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+  }
+
+  .contact-btn:hover {
+    background: var(--accent);
+  }
+
+  .contact-btn--primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+  }
+
+  .contact-btn--primary:hover {
+    opacity: 0.9;
+  }
+
+  .contact-btn--enterprise {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+  }
+`}</style>

@@ -1,0 +1,292 @@
+---
+title: Security Best Practices
+---
+
+
+Protect your API keys, implement proper authentication, and follow security best practices to keep your application and customer data safe.
+
+## API Key Security
+
+### Key Rotation
+
+Rotate API keys regularly:
+
+```python
+new_key = client.api_keys.create({
+    'name': 'Production Key 2026',
+    'permissions': ['products:read', 'orders:write'],
+    'expires_at': '2027-05-10'
+})
+
+update_config({ 'api_key': new_key.key })
+
+client.api_keys.revoke('key_old_id')
+```
+
+### Key Scopes
+
+Use least-privilege permissions:
+
+```json
+{
+  "key_name": "Checkout Service",
+  "scopes": [
+    "orders:create",
+    "orders:read",
+    "customers:read",
+    "products:read",
+    "payments:write"
+  ],
+  "ip_whitelist": ["10.0.0.0/8"],
+  "rate_limit": 100
+}
+```
+
+<Callout type="info">
+  **Never expose keys in frontend code!** Use separate Public (read-only) and Secret (server-side) keys.
+</Callout>
+
+## Authentication Patterns
+
+### JWT Validation
+
+Validate JWT tokens properly:
+
+```typescript
+import jwt from 'jsonwebtoken';
+
+function validateToken(token: string, secret: string): User {
+  try {
+    const decoded = jwt.verify(token, secret, {
+      algorithms: ['RS256'],
+      issuer: 'https://auth.premium-api.com',
+      audience: 'https://api.premium-api.com'
+    });
+
+    return decoded as User;
+  } catch (error) {
+    throw new AuthError('Invalid token');
+  }
+}
+```
+
+### Token Expiration
+
+Handle token refresh:
+
+```typescript
+async function fetchWithRefresh(url: string, token: string) {
+  const response = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+
+  if (response.status === 401) {
+    // Token expired, refresh
+    const newToken = await refreshToken();
+    return fetch(url, {
+      headers: { 'Authorization': `Bearer ${newToken}` }
+    });
+  }
+
+  return response;
+}
+```
+
+## Input Validation
+
+### Sanitize All Input
+
+```typescript
+import DOMPurify from 'isomorphic-dompurify';
+
+function sanitizeProductInput(input: ProductInput): SanitizedProduct {
+  return {
+    name: DOMPurify.sanitize(input.name, { maxLength: 200 }),
+    description: DOMPurify.sanitize(input.description, { maxLength: 2000 }),
+    price: parseFloat(input.price),  // Validate it's a number
+    sku: input.sku.replace(/[^a-zA-Z0-9-_]/g, '').toUpperCase()
+  };
+}
+```
+
+### Validate with Zod
+
+```typescript
+import { z } from 'zod';
+
+const ProductSchema = z.object({
+  name: z.string().min(1).max(200),
+  price: z.number().positive().max(1000000),
+  sku: z.string().regex(/^[A-Z0-9-_]+$/).max(50)
+});
+
+function createProduct(input: unknown): Product {
+  const validated = ProductSchema.parse(input);
+  return client.products.create(validated);
+}
+```
+
+## HTTPS Enforcement
+
+Always use HTTPS:
+
+```typescript
+// Redirect HTTP to HTTPS
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https') {
+    res.redirect(`https://${req.hostname}${req.url}`);
+  }
+  next();
+});
+
+// Or in serverless
+export const handler = async (event) => {
+  if (!event.headers['x-forwarded-proto']?.startsWith('https')) {
+    return {
+      statusCode: 301,
+      headers: { Location: `https://${event.headers.host}${event.path}` }
+    };
+  }
+};
+```
+
+## Rate Limiting
+
+Implement rate limiting on your endpoints:
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 minute
+  max: 100,             // 100 requests per minute
+  message: 'Too many requests',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use('/api', apiLimiter);
+
+// For sensitive operations
+const strictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,  // Even stricter
+  skipSuccessfulRequests: true
+});
+```
+
+## Webhook Security
+
+### Verify All Webhooks
+
+```python
+import hmac
+import hashlib
+
+WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET')
+
+def verify_webhook(request):
+    signature = request.headers.get('X-Premium-Signature')
+    payload = request.get_data()
+
+    expected = hmac.new(
+        WEBHOOK_SECRET.encode(),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(f'sha256={expected}', signature):
+        abort(401, 'Invalid signature')
+
+    return json.loads(payload)
+```
+
+### Idempotent Webhook Handlers
+
+```python
+@app.route('/webhook', methods=['POST'])
+def handle_webhook():
+    event = verify_webhook(request)
+
+    # Check if already processed
+    event_key = f"processed:{event['id']}"
+    if redis.exists(event_key):
+        return '', 200  # Already processed
+
+    # Process event
+    process_event(event)
+
+    # Mark as processed
+    redis.setex(event_key, 86400, '1')  # Expire in 24h
+
+    return '', 200
+```
+
+## Data Protection
+
+### PII Handling
+
+```typescript
+// Redact PII from logs
+function redactPII(data: any): any {
+  const piiFields = ['email', 'phone', 'address', 'ssn', 'credit_card'];
+
+  return Object.entries(data).reduce((acc, [key, value]) => {
+    if (piiFields.some(f => key.toLowerCase().includes(f))) {
+      acc[key] = '[REDACTED]';
+    } else if (typeof value === 'object') {
+      acc[key] = redactPII(value);
+    } else {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+}
+```
+
+### Encryption at Rest
+
+```python
+
+from cryptography.fernet import Fernet
+
+class SensitiveData:
+    def __init__(self):
+        self.cipher = Fernet(settings.ENCRYPTION_KEY)
+
+    def encrypt(self, data: str) -> str:
+        return self.cipher.encrypt(data.encode()).decode()
+
+    def decrypt(self, token: str) -> str:
+        return self.cipher.decrypt(token.encode()).decode()
+```
+
+## Security Headers
+
+```typescript
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  next();
+});
+```
+
+## Security Checklist
+
+- [ ] API keys rotated within last 90 days
+- [ ] Secrets stored in environment variables, not code
+- [ ] HTTPS enforced on all endpoints
+- [ ] Rate limiting configured
+- [ ] Webhook signatures verified
+- [ ] Input validation on all endpoints
+- [ ] PII logged in redacted form
+- [ ] Security headers configured
+- [ ] Dependencies up to date
+- [ ] Security audit completed
+
+<Callout type="info">
+  **Security Contact:** Report security vulnerabilities to security@zephyr.dev. We operate a responsible disclosure program.
+</Callout>

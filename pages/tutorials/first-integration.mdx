@@ -1,0 +1,913 @@
+---
+title: First Integration Tutorial
+description: Build your first end-to-end integration with the Zephyr API in this step-by-step guide
+---
+
+This tutorial walks you through building a complete integration with the Zephyr API. By the end, you'll have a working application that authenticates, fetches products, creates an order, and tracks an analytics event.
+
+## What You'll Build
+
+<div class="tutorial-progress">
+  <div class="tutorial-step tutorial-step--completed">
+    <div class="tutorial-step__number">1</div>
+    <div class="tutorial-step__label">Prerequisites</div>
+  </div>
+  <div class="tutorial-step tutorial-step--current">
+    <div class="tutorial-step__number">2</div>
+    <div class="tutorial-step__label">Set Up Environment</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">3</div>
+    <div class="tutorial-step__label">Initialize Client</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">4</div>
+    <div class="tutorial-step__label">Fetch Products</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">5</div>
+    <div class="tutorial-step__label">Create Order</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">6</div>
+    <div class="tutorial-step__label">Track Analytics</div>
+  </div>
+</div>
+
+A simple e-commerce integration that:
+
+1. Authenticates with API key
+2. Fetches available products
+3. Creates an order
+4. Tracks a purchase event in analytics
+
+## API Flow Overview
+
+<Mermaid
+  chart={`
+flowchart LR
+    subgraph Client["Your Application"]
+        A[Initialize Client]
+    end
+    subgraph ZephyrAPI["Zephyr API"]
+        B[GET /products]
+        C[POST /orders]
+        D[POST /analytics/events]
+    end
+    A -->|1. Auth| ZephyrAPI
+    B -->|2. Fetch Products| A
+    C -->|3. Create Order| A
+    D -->|4. Track Event| A
+    style ZephyrAPI fill:#f3e8ff,stroke:#7c3aed
+    style Client fill:#dcfce7,stroke:#166534
+`}
+/>
+
+## Prerequisites
+
+- Node.js 18+ or Python 3.9+
+- An API key with `products:read`, `orders:write`, and `analytics:write` permissions
+- Your favorite HTTP client (fetch, axios, or requests)
+
+## Step 1: Set Up Your Environment
+
+### Create Project Structure
+
+```bash
+mkdir zephyr-integration && cd zephyr-integration
+npm init -y
+# or for Python
+# mkdir zephyr-integration && cd zephyr-integration
+# python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
+```
+
+### Install Dependencies
+
+```bash
+# Node.js
+npm install node-fetch@3 dotenv
+
+# Python
+# pip install requests python-dotenv
+```
+
+### Configure Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash
+# .env (never commit this to version control!)
+ZEPHYR_API_KEY=sk_live_your_api_key_here
+ZEPHYR_API_URL=https://api.zephyr.com/v1
+```
+
+<Callout type="warning">
+  **Security:** Never commit your `.env` file to version control. Add it to
+  `.gitignore` immediately.
+</Callout>
+
+```bash
+# .gitignore
+node_modules/
+.env
+*.log
+```
+
+## Step 2: Initialize the Client
+
+The following example shows how to create an authenticated API client in your preferred language:
+
+<div class="code-tabs">
+  <div class="code-tabs-header">
+    <input type="radio" name="client-lang" id="client-js" checked />
+    <label for="client-js">JavaScript</label>
+    <input type="radio" name="client-lang" id="client-py" />
+    <label for="client-py">Python</label>
+  </div>
+  <div class="code-tab-content active" data-lang="js">
+```javascript
+// src/client.js
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const API_KEY = process.env.ZEPHYR_API_KEY;
+const API_URL = process.env.ZEPHYR_API_URL || "https://api.zephyr.com/v1";
+
+/\*\*
+
+- Zephyr API Client
+- Handles authentication and request management
+  \*/
+  class ZephyrClient {
+  constructor(apiKey, baseUrl = API_URL) {
+  this.apiKey = apiKey;
+  this.baseUrl = baseUrl;
+  }
+
+/\*\*
+
+- Make an authenticated API request
+- @param {string} method - HTTP method
+- @param {string} endpoint - API endpoint
+- @param {object} body - Request body (optional)
+- @returns {Promise<object>} Response data
+  \*/
+  async request(method, endpoint, body = null) {
+  const url = `${this.baseUrl}${endpoint}`;
+  const headers = {
+  Authorization: `Bearer ${this.apiKey}`,
+  "Content-Type": "application/json",
+  };
+
+  const options = {
+  method,
+  headers,
+  };
+
+  if (body) {
+  options.body = JSON.stringify(body);
+  }
+
+  try {
+  const response = await fetch(url, options);
+  const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          `API Error: ${data.error?.message || response.statusText}`,
+        );
+      }
+
+      return data;
+
+  } catch (error) {
+  console.error(`Request failed: ${method} ${endpoint}`);
+  throw error;
+  }
+
+}
+
+// Convenience methods
+async get(endpoint) {
+return this.request("GET", endpoint);
+}
+
+async post(endpoint, body) {
+return this.request("POST", endpoint, body);
+}
+
+async put(endpoint, body) {
+return this.request("PUT", endpoint, body);
+}
+
+async delete(endpoint) {
+return this.request("DELETE", endpoint);
+}
+}
+
+// Export singleton instance
+export const client = new ZephyrClient(API_KEY);
+
+````
+  </div>
+  <div class="code-tab-content" data-lang="py">
+```python
+# src/client.py
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_KEY = os.getenv('ZEPHYR_API_KEY')
+API_URL = os.getenv('ZEPHYR_API_URL', 'https://api.zephyr.com/v1')
+
+
+class ZephyrClient:
+    """Zephyr API Client - Handles authentication and requests"""
+
+    def __init__(self, api_key, base_url=API_URL):
+        self.api_key = api_key
+        self.base_url = base_url
+
+    def _request(self, method, endpoint, body=None):
+        """Make an authenticated API request"""
+        url = f"{self.base_url}{endpoint}"
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
+
+        try:
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=headers,
+                json=body
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {method} {endpoint}")
+            raise
+
+    def get(self, endpoint):
+        return self._request('GET', endpoint)
+
+    def post(self, endpoint, body):
+        return self._request('POST', endpoint, body)
+
+    def put(self, endpoint, body):
+        return self._request('PUT', endpoint, body)
+
+    def delete(self, endpoint):
+        return self._request('DELETE', endpoint)
+
+
+# Export singleton instance
+client = ZephyrClient(API_KEY)
+````
+
+  </div>
+</div>
+
+<Callout type="tip">
+  **Language Preference:** Your tab selection is saved in localStorage, so
+  you'll see your preferred language when you return to this page.
+</Callout>
+
+## Step 3: Fetch Products
+
+Now let's fetch the available products from your catalog:
+
+### Node.js
+
+```javascript
+// src/index.js
+import { client } from "./client.js";
+
+/**
+ * Fetch active products with pagination
+ * @param {number} page - Page number
+ * @param {number} perPage - Items per page
+ */
+async function getProducts(page = 1, perPage = 20) {
+  console.log(`Fetching products (page ${page})...`);
+
+  const response = await client.get(
+    `/products?page=${page}&per_page=${perPage}&status=active`,
+  );
+
+  console.log(`Found ${response.meta.total} products total`);
+  return response.data;
+}
+
+// Run the function
+const products = await getProducts();
+console.log(`First 5 products:`, products.slice(0, 5));
+```
+
+### Python
+
+```python
+# src/index.py
+from client import client
+
+
+def get_products(page=1, per_page=20):
+    """Fetch active products with pagination"""
+    print(f"Fetching products (page {page})...")
+
+    response = client.get(
+        f"/products?page={page}&per_page={per_page}&status=active"
+    )
+
+    print(f"Found {response['meta']['total']} products total")
+    return response['data']
+
+
+# Run the function
+if __name__ == '__main__':
+    products = get_products()
+    print(f"First 5 products: {products[:5]}")
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": "prod_abc123xyz789",
+      "name": "Premium Wireless Headphones",
+      "slug": "premium-wireless-headphones",
+      "status": "active",
+      "pricing": {
+        "currency": "USD",
+        "base_price": 199.99
+      },
+      "inventory": {
+        "track_quantity": true,
+        "quantity": 150,
+        "available": true
+      },
+      "variants": [
+        {
+          "id": "var_black",
+          "name": "Black",
+          "sku": "SH-2024-BLK",
+          "price": 199.99,
+          "inventory_quantity": 75
+        },
+        {
+          "id": "var_white",
+          "name": "White",
+          "sku": "SH-2024-WHT",
+          "price": 199.99,
+          "inventory_quantity": 75
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "total": 1250,
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 63
+  }
+}
+```
+
+## Step 4: Create an Order
+
+With a product selected, let's create an order:
+
+### Node.js
+
+```javascript
+// src/index.js (continued)
+
+/**
+ * Create a new order
+ * @param {string} productId - Product ID
+ * @param {string} variantId - Variant ID
+ * @param {number} quantity - Quantity to order
+ * @param {object} customer - Customer information
+ */
+async function createOrder(productId, variantId, quantity, customer) {
+  console.log(`Creating order for customer ${customer.email}...`);
+
+  const orderData = {
+    line_items: [
+      {
+        variant_id: variantId,
+        quantity: quantity,
+        price: 199.99, // Price at time of order
+      },
+    ],
+    customer: {
+      email: customer.email,
+      first_name: customer.firstName,
+      last_name: customer.lastName,
+      address: {
+        line1: customer.address,
+        city: customer.city,
+        state: customer.state,
+        postal_code: customer.postalCode,
+        country: customer.country,
+      },
+    },
+    shipping: {
+      method: "standard",
+      price: 9.99,
+    },
+    payment_method: "card",
+    metadata: {
+      source: "tutorial_integration",
+      tutorial_version: "1.0",
+    },
+  };
+
+  const order = await client.post("/orders", orderData);
+  console.log(`Order created: ${order.id}`);
+  console.log(`Status: ${order.status}`);
+  console.log(`Total: $${order.pricing.grand_total}`);
+
+  return order;
+}
+
+// Example customer data
+const customer = {
+  email: "sarah.chen@example.com",
+  firstName: "Sarah",
+  lastName: "Chen",
+  address: "123 Main Street",
+  city: "San Francisco",
+  state: "CA",
+  postalCode: "94102",
+  country: "US",
+};
+
+// Create an order with the first variant of the first product
+const order = await createOrder(
+  products[0].id,
+  products[0].variants[0].id,
+  1,
+  customer,
+);
+```
+
+### Python
+
+```python
+# src/index.py (continued)
+
+def create_order(product_id, variant_id, quantity, customer):
+    """Create a new order"""
+    print(f"Creating order for customer {customer['email']}...")
+
+    order_data = {
+        'line_items': [
+            {
+                'variant_id': variant_id,
+                'quantity': quantity,
+                'price': 199.99  # Price at time of order
+            }
+        ],
+        'customer': {
+            'email': customer['email'],
+            'first_name': customer['first_name'],
+            'last_name': customer['last_name'],
+            'address': {
+                'line1': customer['address'],
+                'city': customer['city'],
+                'state': customer['state'],
+                'postal_code': customer['postal_code'],
+                'country': customer['country']
+            }
+        },
+        'shipping': {
+            'method': 'standard',
+            'price': 9.99
+        },
+        'payment_method': 'card',
+        'metadata': {
+            'source': 'tutorial_integration',
+            'tutorial_version': '1.0'
+        }
+    }
+
+    order = client.post('/orders', order_data)
+    print(f"Order created: {order['id']}")
+    print(f"Status: {order['status']}")
+    print(f"Total: ${order['pricing']['grand_total']}")
+
+    return order
+
+
+# Example customer data
+customer = {
+    'email': 'sarah.chen@example.com',
+    'first_name': 'Sarah',
+    'last_name': 'Chen',
+    'address': '123 Main Street',
+    'city': 'San Francisco',
+    'state': 'CA',
+    'postal_code': '94102',
+    'country': 'US'
+}
+
+# Create an order with the first variant of the first product
+if __name__ == '__main__':
+    order = create_order(
+        products[0]['id'],
+        products[0]['variants'][0]['id'],
+        1,
+        customer
+    )
+```
+
+### Example Response
+
+```json
+{
+  "id": "ord_xyz789abc123",
+  "status": "pending_payment",
+  "created_at": "2026-05-11T10:30:00Z",
+  "customer": {
+    "email": "sarah.chen@example.com",
+    "first_name": "Sarah",
+    "last_name": "Chen"
+  },
+  "line_items": [
+    {
+      "variant_id": "var_black",
+      "product_name": "Premium Wireless Headphones",
+      "variant_name": "Black",
+      "quantity": 1,
+      "unit_price": 199.99,
+      "total": 199.99
+    }
+  ],
+  "pricing": {
+    "subtotal": 199.99,
+    "shipping": 9.99,
+    "tax": 18.0,
+    "discount": 0.0,
+    "grand_total": 227.98
+  },
+  "payment": {
+    "status": "pending",
+    "method": "card"
+  },
+  "fulfillment": {
+    "status": "unfulfilled"
+  }
+}
+```
+
+## Step 5: Track Analytics Event
+
+Now let's track the purchase event for analytics:
+
+### Node.js
+
+```javascript
+// src/index.js (continued)
+
+/**
+ * Track a purchase event in analytics
+ * @param {object} order - The order object
+ * @param {object} customer - Customer information
+ */
+async function trackPurchaseEvent(order, customer) {
+  console.log(`Tracking purchase event for order ${order.id}...`);
+
+  const eventData = {
+    event_name: "purchase_completed",
+    user_id: customer.email, // Using email as user identifier
+    properties: {
+      order_id: order.id,
+      revenue: order.pricing.grand_total,
+      tax: order.pricing.tax,
+      shipping: order.pricing.shipping,
+      discount: order.pricing.discount,
+      payment_method: order.payment.method,
+      items: order.line_items.map((item) => ({
+        product_id: item.variant_id,
+        name: item.product_name,
+        variant_name: item.variant_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      })),
+    },
+    context: {
+      ip: "203.0.113.42", // Customer's IP address
+      user_agent: "Mozilla/5.0 Tutorial/1.0",
+      locale: "en-US",
+      page_url: "https://example.com/checkout/complete",
+    },
+  };
+
+  const response = await client.post("/analytics/events", eventData);
+  console.log(`Event tracked: ${response.event_id}`);
+
+  return response;
+}
+
+// Track the event after creating the order
+const analyticsResult = await trackPurchaseEvent(order, customer);
+console.log("Analytics event ID:", analyticsResult.event_id);
+```
+
+### Python
+
+```python
+# src/index.py (continued)
+
+def track_purchase_event(order, customer):
+    """Track a purchase event in analytics"""
+    print(f"Tracking purchase event for order {order['id']}...")
+
+    event_data = {
+        'event_name': 'purchase_completed',
+        'user_id': customer['email'],  # Using email as user identifier
+        'properties': {
+            'order_id': order['id'],
+            'revenue': order['pricing']['grand_total'],
+            'tax': order['pricing']['tax'],
+            'shipping': order['pricing']['shipping'],
+            'discount': order['pricing']['discount'],
+            'payment_method': order['payment']['method'],
+            'items': [
+                {
+                    'product_id': item['variant_id'],
+                    'name': item['product_name'],
+                    'variant_name': item['variant_name'],
+                    'quantity': item['quantity'],
+                    'unit_price': item['unit_price']
+                }
+                for item in order['line_items']
+            ]
+        },
+        'context': {
+            'ip': '203.0.113.42',  # Customer's IP address
+            'user_agent': 'Mozilla/5.0 Tutorial/1.0',
+            'locale': 'en-US',
+            'page_url': 'https://example.com/checkout/complete'
+        }
+    }
+
+    response = client.post('/analytics/events', event_data)
+    print(f"Event tracked: {response['event_id']}")
+
+    return response
+
+
+if __name__ == '__main__':
+    # ... after create_order()
+    analytics_result = track_purchase_event(order, customer)
+    print(f"Analytics event ID: {analytics_result['event_id']}")
+```
+
+### Example Response
+
+```json
+{
+  "event_id": "evt_abc123xyz789",
+  "status": "received",
+  "timestamp": "2026-05-11T10:30:05Z",
+  "message": "Event accepted for processing"
+}
+```
+
+## Step 6: Complete Tutorial Script
+
+Here's the complete Node.js implementation:
+
+```javascript
+// src/index.js - Complete tutorial integration
+import { client } from "./client.js";
+
+async function main() {
+  console.log("=== Zephyr API Tutorial Integration ===\n");
+
+  try {
+    // Step 1: Fetch products
+    console.log("Step 1: Fetching products...");
+    const productsResponse = await client.get(
+      "/products?page=1&per_page=20&status=active",
+    );
+    const products = productsResponse.data;
+    console.log(`Found ${productsResponse.meta.total} active products\n`);
+
+    if (products.length === 0) {
+      throw new Error("No products found. Please create products first.");
+    }
+
+    // Step 2: Select a product and variant
+    const product = products[0];
+    const variant = product.variants[0];
+    console.log(`Selected: ${product.name} (${variant.name})`);
+    console.log(`Price: $${variant.price}\n`);
+
+    // Step 3: Create customer
+    const customer = {
+      email: "sarah.chen@example.com",
+      firstName: "Sarah",
+      lastName: "Chen",
+      address: "123 Main Street",
+      city: "San Francisco",
+      state: "CA",
+      postalCode: "94102",
+      country: "US",
+    };
+
+    // Step 4: Create order
+    console.log("Step 2: Creating order...");
+    const orderData = {
+      line_items: [
+        {
+          variant_id: variant.id,
+          quantity: 1,
+          price: variant.price,
+        },
+      ],
+      customer: {
+        email: customer.email,
+        first_name: customer.firstName,
+        last_name: customer.lastName,
+        address: {
+          line1: customer.address,
+          city: customer.city,
+          state: customer.state,
+          postal_code: customer.postalCode,
+          country: customer.country,
+        },
+      },
+      shipping: {
+        method: "standard",
+        price: 9.99,
+      },
+      payment_method: "card",
+      metadata: {
+        source: "tutorial_integration",
+      },
+    };
+
+    const order = await client.post("/orders", orderData);
+    console.log(`Order created: ${order.id}`);
+    console.log(`Total: $${order.pricing.grand_total}\n`);
+
+    // Step 5: Track analytics event
+    console.log("Step 3: Tracking analytics event...");
+    const eventData = {
+      event_name: "purchase_completed",
+      user_id: customer.email,
+      properties: {
+        order_id: order.id,
+        revenue: order.pricing.grand_total,
+        items: order.line_items.length,
+      },
+    };
+
+    const event = await client.post("/analytics/events", eventData);
+    console.log(`Event tracked: ${event.event_id}\n`);
+
+    // Success!
+    console.log("=== Integration Complete! ===");
+    console.log(`Order: ${order.id}`);
+    console.log(`Analytics: ${event.event_id}`);
+  } catch (error) {
+    console.error("Integration failed:", error.message);
+    process.exit(1);
+  }
+}
+
+main();
+```
+
+## Error Handling
+
+Add robust error handling to your integration:
+
+```javascript
+// src/error-handler.js
+
+class ZephyrAPIError extends Error {
+  constructor(errorResponse, statusCode) {
+    super(errorResponse.error?.message || "Unknown error");
+    this.statusCode = statusCode;
+    this.code = errorResponse.error?.code;
+    this.details = errorResponse.error?.details;
+    this.requestId = errorResponse.error?.request_id;
+  }
+}
+
+async function safeApiCall(apiFunction, ...args) {
+  try {
+    return await apiFunction(...args);
+  } catch (error) {
+    if (error instanceof ZephyrAPIError) {
+      // Handle known API errors
+      switch (error.code) {
+        case "rate_limit_exceeded":
+          console.error("Rate limit hit - implement backoff");
+          // Implement exponential backoff
+          await sleep(1000);
+          return safeApiCall(apiFunction, ...args);
+
+        case "invalid_api_key":
+          console.error("Invalid API key - check your configuration");
+          throw error;
+
+        case "insufficient_permissions":
+          console.error("Missing permissions - update API key scopes");
+          throw error;
+
+        default:
+          console.error(`API Error [${error.code}]: ${error.message}`);
+          throw error;
+      }
+    }
+    // Network or other errors
+    console.error("Network error:", error.message);
+    throw error;
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Usage
+const products = await safeApiCall(() => client.get("/products?status=active"));
+```
+
+## Testing Your Integration
+
+### Test with Mock Data
+
+Create a test script that uses mock responses:
+
+```javascript
+// src/test.js
+import { jest } from "@jest/globals";
+
+// Mock the API responses for testing
+const mockProducts = [
+  {
+    id: "prod_test123",
+    name: "Test Product",
+    variants: [{ id: "var_test", name: "Default", price: 29.99 }],
+  },
+];
+
+// Test the integration logic without hitting the API
+describe("Integration Tests", () => {
+  test("should process products correctly", () => {
+    const activeProducts = mockProducts.filter((p) => p.status === "active");
+    expect(activeProducts.length).toBe(1);
+  });
+
+  test("should calculate order total correctly", () => {
+    const variant = mockProducts[0].variants[0];
+    const orderTotal = variant.price + 9.99; // price + shipping
+    expect(orderTotal).toBe(39.98);
+  });
+});
+```
+
+## Next Steps
+
+Now that you've completed your first integration, explore:
+
+- [Webhook Handler Tutorial](/tutorials/webhook-handler) - Build real-time event handlers
+- [Batch Processing Tutorial](/tutorials/batch-processing) - Handle high-volume operations
+- [Environment Configuration Guide](/guides/environments) - Manage dev/staging/prod
+- [Error Handling Guide](/guides/error-handling) - Implement robust error handling
+- [Rate Limits Guide](/guides/rate-limits) - Handle API rate limits effectively
+
+## Full Example Code
+
+Download the complete tutorial code:
+
+```bash
+# Clone the examples repository
+git clone https://github.com/zephyr/examples.git
+cd examples/tutorials/first-integration
+
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+
+# Add your API key
+# ZEPHYR_API_KEY=sk_live_your_key_here
+
+# Run the integration
+npm start
+```

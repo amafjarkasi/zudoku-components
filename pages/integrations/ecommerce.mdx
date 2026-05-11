@@ -1,0 +1,265 @@
+---
+title: E-Commerce Integration
+---
+
+
+Connect your storefront, marketplace, or POS systems with our e-commerce APIs for unified inventory, orders, and fulfillment.
+
+## Supported Platforms
+
+| Platform | Integration Type | Features |
+|---|---|---|
+| Shopify | Native Sync | Products, Orders, Inventory |
+| WooCommerce | Plugin | Products, Orders, Customers |
+| Magento | API | Full Sync |
+| BigCommerce | API | Products, Orders |
+| Squarespace | API | Products, Inventory |
+| Custom Storefront | SDK | Full Control |
+
+## Shopify Sync
+
+### Installing the App
+
+1. Go to Shopify App Store
+2. Search "Zephyr Integration"
+3. Click "Add App"
+4. Authorize connection
+
+### Configuration
+
+```typescript
+client.integrations.shopify.configure({
+    shop: 'your-store.myshopify.com',
+    access_token: 'shpat_xxxxx',
+    sync_settings: {
+        products: { mode: 'bidirectional', conflict_resolution: 'source_wins' },
+        orders: { mode: 'import_only', status_filter: ['paid', 'fulfilled'] },
+        inventory: { mode: 'push', warehouse: 'primary' }
+    }
+});
+```
+
+### Product Sync
+
+```python
+client.integrations.shopify.sync_products({
+    direction: 'to_premium',
+    filters: { updated_after: '2026-05-01' }
+})
+
+```
+
+### Order Import
+
+```python
+orders = client.integrations.shopify.import_orders({
+    status: 'paid',
+   fulfillment_status: 'unfulfilled'
+})
+
+for order in orders:
+    # Create order in our system
+    premium_order = client.orders.create_from_external({
+        'source': 'shopify',
+        'source_id': order['id'],
+        'customer': order['customer'],
+        'items': order['line_items'],
+        'shipping': order['shipping_lines']
+    })
+```
+
+## WooCommerce Integration
+
+### Setup
+
+1. Install our WooCommerce plugin from wordpress.org
+2. Enter your API key in plugin settings
+3. Configure sync options
+
+### Configuration
+
+```python
+client.integrations.woocommerce.configure({
+    site_url: 'https://your-store.com',
+    consumer_key: 'ck_xxx',
+    consumer_secret: 'cs_xxx',
+    sync: {
+        products: True,
+        orders: True,
+        customers: True,
+        inventory: 'realtime'
+    }
+})
+```
+
+## Custom Storefront Integration
+
+### JavaScript SDK
+
+```html
+<script src="https://cdn.premium-api.com/storefront-sdk.js"></script>
+
+<script>
+    PremiumStorefront.init({
+        storeId: 'store_abc123',
+        publicKey: 'pk_live_xxx'
+    });
+
+    // Display products
+    const products = await PremiumStorefront.products.list();
+    renderProducts(products);
+
+    // Add to cart
+    await PremiumStorefront.cart.addItem({
+        variantId: 'var_123',
+        quantity: 1
+    });
+
+    // Checkout
+    const order = await PremiumStorefront.checkout.create({
+        customerId: 'cust_xyz',
+        shippingAddress: {...}
+    });
+</script>
+```
+
+### React Components
+
+```tsx
+import { ProductCard, CartButton, CheckoutForm } from '@premium-api/storefront-react';
+
+function Storefront() {
+  return (
+    <div className="store">
+      <ProductGrid>
+        {products.map(p => (
+          <ProductCard key={p.id} product={p}>
+            <CartButton productId={p.id} variantId={p.defaultVariantId} />
+          </ProductCard>
+        ))}
+      </ProductGrid>
+
+      <CartDrawer>
+        <CheckoutForm onSubmit={handleCheckout} />
+      </CartDrawer>
+    </div>
+  );
+}
+```
+
+### Checkout Customization
+
+```typescript
+// Custom checkout flow
+const checkout = client.checkout.create({
+    items: cartItems,
+    customerId: customer.id,
+    options: {
+        allow_guest: true,
+        show_coupon_field: true,
+        custom_shipping_methods: ['standard', 'express', 'overnight']
+    }
+});
+
+// Custom payment step
+const paymentSession = await client.checkout.startPayment({
+    checkoutId: checkout.id,
+    paymentMethods: ['card', 'apple_pay', 'google_pay']
+});
+```
+
+## POS Integration
+
+### Real-time Sync
+
+```python
+client.integrations.pos.configure({
+    type: 'point_of_sale',
+    sync_mode: 'realtime',
+    webhooks: ['inventory.updated', 'order.placed']
+})
+
+@app.route('/pos-webhook', methods=['POST'])
+def handle_pos_webhook(request):
+    event = request.json
+    if event['type'] == 'order.placed':
+        # Update local inventory
+        pos_system.deduct_inventory(event['data']['items'])
+    return '', 200
+```
+
+### Offline Mode
+
+POS systems often work offline. Our SDK supports:
+
+```typescript
+// Queue operations when offline
+const posClient = new PremiumPOSClient({
+    storeId: 'store_abc',
+    offlineQueue: true,
+    maxQueueSize: 1000
+});
+
+// Operations queued and synced when online
+await posClient.orders.create({...}); // Will queue if offline
+```
+
+## Marketplace Integration
+
+### Multi-channel Listing
+
+```python
+product = client.products.create({
+    'name': 'Premium Wireless Headphones',
+    'price': 199.99,
+    'inventory': 500
+})
+
+listings = client.marketplace.create_listings({
+    product_id: product.id,
+    channels: [
+        {'channel': 'amazon', 'price': 219.99, 'quantity': 200},
+        {'channel': 'ebay', 'price': 209.99, 'quantity': 150},
+        {'channel': 'walmart', 'price': 199.99, 'quantity': 150}
+    ]
+})
+```
+
+### Order Aggregation
+
+Aggregate orders from all channels:
+
+```python
+orders = client.marketplace.orders.list({
+    'date_range': {'start': '2026-04-01', 'end': '2026-04-30'},
+    'channels': 'all',
+    'status': 'paid'
+})
+
+for order in orders:
+    print(f"{order.channel}: {order.id} - {order.total}")
+```
+
+## Inventory Sync Rules
+
+Configure how inventory is managed across channels:
+
+| Rule | Description |
+|---|---|
+| `single_source` | All channels draw from same pool |
+| `channel_reserve` | Reserve inventory per channel |
+| `oversell_protection` | Never sell more than available |
+| `sync_frequency` | Real-time, hourly, daily |
+
+```python
+client.inventory.configure({
+    'strategy': 'single_source',
+    'oversell_protection': True,
+    'low_stock_threshold': 10,
+    'notifications': {'low_stock': 'webhook'}
+})
+```
+
+<Callout type="info">
+  **SKU Mapping:** When integrating multiple platforms, use our SKU mapping feature to connect products across channels with different internal identifiers.
+</Callout>

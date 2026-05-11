@@ -1,0 +1,858 @@
+---
+title: Analytics Events
+description: Track user behavior and product interactions with comprehensive event analytics
+---
+
+Track user behavior and product interactions with our event-driven analytics API. Ingest millions of events per day with sub-second query latency.
+
+## Event Model
+
+Every event follows our unified schema:
+
+```typescript
+interface AnalyticsEvent {
+  event_id: string; // Unique event identifier
+  event_name: string; // e.g., "page_view", "purchase"
+  timestamp: string; // ISO 8601 timestamp
+  user_id?: string; // User identifier (if known)
+  anonymous_id?: string; // Anonymous visitor ID
+  session_id: string; // Browser/session identifier
+  properties: Record<string, any>; // Event-specific data
+  context: {
+    ip: string;
+    user_agent: string;
+    locale: string;
+    page_url: string;
+    referrer?: string;
+  };
+}
+```
+
+### Event Object Example
+
+```json
+{
+  "event_id": "evt_abc123xyz789",
+  "event_name": "product_viewed",
+  "timestamp": "2026-05-11T10:30:00Z",
+  "user_id": "usr_xyz789abc123",
+  "session_id": "sess_abc123",
+  "properties": {
+    "product_id": "prod_headphones_001",
+    "product_name": "Premium Wireless Headphones",
+    "category": "electronics",
+    "price": 199.99,
+    "currency": "USD"
+  },
+  "context": {
+    "ip": "203.0.113.42",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0",
+    "locale": "en-US",
+    "page_url": "https://shop.example.com/products/premium-wireless-headphones",
+    "referrer": "https://shop.example.com/catalog/electronics"
+  }
+}
+```
+
+## Sending Events
+
+### Server-side Event Tracking
+
+```python
+# Python SDK
+from zephyr import ZephyrClient
+
+client = ZephyrClient(api_key='sk_live_abc123...')
+
+# Track a single event
+client.analytics.track(
+    event_name="product_purchased",
+    user_id="usr_abc123",
+    properties={
+        "product_id": "prod_xyz789",
+        "product_name": "Premium Wireless Headphones",
+        "price": 199.99,
+        "currency": "USD",
+        "quantity": 1,
+        "payment_method": "credit_card"
+    }
+)
+```
+
+```javascript
+// Node.js SDK
+import { ZephyrClient } from "@zephyr/node-sdk";
+
+const client = new ZephyrClient({ apiKey: "sk_live_abc123..." });
+
+// Track a single event
+await client.analytics.track({
+  eventName: "product_purchased",
+  userId: "usr_abc123",
+  properties: {
+    product_id: "prod_xyz789",
+    product_name: "Premium Wireless Headphones",
+    price: 199.99,
+    currency: "USD",
+    quantity: 1,
+    payment_method: "credit_card",
+  },
+});
+```
+
+### HTTP API for Events
+
+```bash
+# Direct API call
+curl -X POST https://api.zephyr.com/v1/analytics/events \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_name": "product_viewed",
+    "user_id": "usr_abc123",
+    "timestamp": "2026-05-11T10:30:00Z",
+    "properties": {
+      "product_id": "prod_xyz789",
+      "product_name": "Premium Wireless Headphones",
+      "price": 199.99
+    },
+    "context": {
+      "ip": "203.0.113.42",
+      "user_agent": "Mozilla/5.0 Chrome/120.0.0.0",
+      "locale": "en-US",
+      "page_url": "https://shop.example.com/products/headphones"
+    }
+  }'
+```
+
+### Response
+
+```json
+{
+  "event_id": "evt_abc123xyz789",
+  "status": "received",
+  "timestamp": "2026-05-11T10:30:00.123Z"
+}
+```
+
+## Batch Events
+
+For high-throughput scenarios, batch events to reduce API calls:
+
+```python
+# Python - Batch events
+events = [
+    {
+        "event_name": "page_view",
+        "user_id": "usr_abc123",
+        "timestamp": "2026-05-11T10:30:00Z",
+        "properties": {"page": "/products", "category": "electronics"}
+    },
+    {
+        "event_name": "page_view",
+        "user_id": "usr_abc123",
+        "timestamp": "2026-05-11T10:30:05Z",
+        "properties": {"page": "/products/headphones", "category": "electronics"}
+    },
+    {
+        "event_name": "product_viewed",
+        "user_id": "usr_abc123",
+        "timestamp": "2026-05-11T10:30:10Z",
+        "properties": {
+            "product_id": "prod_xyz789",
+            "product_name": "Premium Wireless Headphones",
+            "price": 199.99
+        }
+    },
+    {
+        "event_name": "add_to_cart",
+        "user_id": "usr_abc123",
+        "timestamp": "2026-05-11T10:30:15Z",
+        "properties": {
+            "product_id": "prod_xyz789",
+            "quantity": 1,
+            "cart_value": 199.99
+        }
+    }
+]
+
+# Send batch
+response = client.analytics.track_batch(events)
+```
+
+```javascript
+// Node.js - Batch events
+const events = [
+  {
+    eventName: "page_view",
+    userId: "usr_abc123",
+    timestamp: "2026-05-11T10:30:00Z",
+    properties: { page: "/products", category: "electronics" },
+  },
+  {
+    eventName: "product_viewed",
+    userId: "usr_abc123",
+    timestamp: "2026-05-11T10:30:05Z",
+    properties: {
+      product_id: "prod_xyz789",
+      product_name: "Premium Wireless Headphones",
+      price: 199.99,
+    },
+  },
+  {
+    eventName: "add_to_cart",
+    userId: "usr_abc123",
+    timestamp: "2026-05-11T10:30:10Z",
+    properties: {
+      product_id: "prod_xyz789",
+      quantity: 1,
+      cart_value: 199.99,
+    },
+  },
+];
+
+const response = await client.analytics.trackBatch(events);
+```
+
+### Batch API Request
+
+```bash
+curl -X POST https://api.zephyr.com/v1/analytics/events/batch \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "event_name": "page_view",
+        "user_id": "usr_abc123",
+        "timestamp": "2026-05-11T10:30:00Z",
+        "properties": {"page": "/products"}
+      },
+      {
+        "event_name": "product_viewed",
+        "user_id": "usr_abc123",
+        "timestamp": "2026-05-11T10:30:05Z",
+        "properties": {"product_id": "prod_xyz789"}
+      }
+    ]
+  }'
+```
+
+### Batch Response
+
+```json
+{
+  "accepted": 2,
+  "failed": 0,
+  "event_ids": ["evt_abc123", "evt_def456"],
+  "errors": []
+}
+```
+
+<Callout type="info">
+  **Batching:** The SDK buffers events and sends them in batches of up to 100
+  events or every 5 seconds, whichever comes first. For direct API calls, the
+  batch limit is 100 events per request.
+</Callout>
+
+## Querying Events
+
+### List Events
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/analytics/events?page=1&per_page=100" \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+**Query Parameters:**
+
+| Parameter    | Type    | Required | Description                            |
+| ------------ | ------- | -------- | -------------------------------------- |
+| `page`       | integer | No       | Page number (default: 1)               |
+| `per_page`   | integer | No       | Items per page (default: 20, max: 100) |
+| `event_name` | string  | No       | Filter by event type                   |
+| `user_id`    | string  | No       | Filter by user                         |
+| `start_date` | string  | No       | Start of date range (ISO 8601)         |
+| `end_date`   | string  | No       | End of date range (ISO 8601)           |
+| `sort`       | string  | No       | Sort field (`timestamp`, `event_name`) |
+| `order`      | string  | No       | Sort order (`asc`, `desc`)             |
+
+### Filter Events by Type
+
+```bash
+# Get all purchase events in the last 7 days
+curl -X GET "https://api.zephyr.com/v1/analytics/events?event_name=purchase_completed&start_date=2026-05-04T00:00:00Z&per_page=100" \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+### Complex Filtering
+
+```bash
+# Get events for a specific user with multiple filters
+curl -X GET "https://api.zephyr.com/v1/analytics/events?user_id=usr_abc123&event_name=product_viewed&start_date=2026-05-01T00:00:00Z&sort=timestamp&order=desc" \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "event_id": "evt_abc123",
+      "event_name": "product_viewed",
+      "timestamp": "2026-05-11T10:30:00Z",
+      "user_id": "usr_abc123",
+      "properties": {
+        "product_id": "prod_xyz789",
+        "product_name": "Premium Wireless Headphones",
+        "price": 199.99
+      }
+    }
+  ],
+  "meta": {
+    "total": 1542,
+    "page": 1,
+    "per_page": 100,
+    "total_pages": 16
+  }
+}
+```
+
+## Aggregation API
+
+### Count Events
+
+```bash
+curl -X POST https://api.zephyr.com/v1/analytics/aggregate \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metric": "count",
+    "event_name": "page_view",
+    "start_date": "2026-05-01T00:00:00Z",
+    "end_date": "2026-05-11T23:59:59Z",
+    "granularity": "day"
+  }'
+```
+
+### Revenue Aggregation
+
+```bash
+curl -X POST https://api.zephyr.com/v1/analytics/aggregate \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metric": "revenue",
+    "event_name": "purchase_completed",
+    "start_date": "2026-05-01T00:00:00Z",
+    "end_date": "2026-05-11T23:59:59Z",
+    "granularity": "day",
+    "dimensions": ["product_category"]
+  }'
+```
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "date": "2026-05-01",
+      "revenue": 15420.5,
+      "order_count": 87,
+      "average_order_value": 177.25
+    },
+    {
+      "date": "2026-05-02",
+      "revenue": 12350.75,
+      "order_count": 65,
+      "average_order_value": 190.01
+    }
+  ],
+  "meta": {
+    "total": 1542,
+    "metric": "revenue",
+    "granularity": "day"
+  }
+}
+```
+
+## Core Event Types
+
+### Page Events
+
+| Event               | Description                | Required Properties        | Example Properties         |
+| ------------------- | -------------------------- | -------------------------- | -------------------------- |
+| `page_view`         | User viewed a page         | `page_url`, `page_name`    | `referrer`, `scroll_depth` |
+| `page_scroll`       | User scrolled to bottom    | `page_url`, `scroll_depth` | `time_on_page`             |
+| `search_performed`  | User searched              | `search_term`              | `results_count`            |
+| `search_no_results` | Search returned no results | `search_term`              | -                          |
+
+### User Events
+
+| Event                      | Description           | Required Properties         | Example Properties |
+| -------------------------- | --------------------- | --------------------------- | ------------------ |
+| `user_signed_up`           | New user registration | `user_id`, `method`         | `plan`, `source`   |
+| `user_logged_in`           | User login            | `user_id`, `method`         | `remember_me`      |
+| `user_logged_out`          | User logout           | `user_id`                   | -                  |
+| `user_updated_profile`     | Profile change        | `user_id`, `fields_changed` | `previous_values`  |
+| `password_reset_requested` | Password reset        | `user_id`, `method`         | -                  |
+
+### E-Commerce Events
+
+| Event                       | Description         | Required Properties          | Example Properties          |
+| --------------------------- | ------------------- | ---------------------------- | --------------------------- |
+| `product_viewed`            | Product page viewed | `product_id`, `product_name` | `price`, `category`         |
+| `product_added_to_cart`     | Item added to cart  | `product_id`, `quantity`     | `price`, `cart_value`       |
+| `product_removed_from_cart` | Item removed        | `product_id`                 | `cart_value`                |
+| `cart_abandoned`            | Cart abandoned      | -                            | `cart_value`, `items_count` |
+| `checkout_started`          | Checkout initiated  | `cart_value`, `item_count`   | `coupon_code`               |
+| `checkout_step_completed`   | Checkout step done  | `step_name`                  | `step_number`               |
+| `purchase_completed`        | Order placed        | `order_id`, `revenue`        | `payment_method`, `items`   |
+| `refund_initiated`          | Refund started      | `order_id`, `amount`         | `reason`                    |
+| `refund_completed`          | Refund processed    | `order_id`, `amount`         | `reason`                    |
+
+## Event Properties Schema
+
+### Purchase Event
+
+```json
+{
+  "event_name": "purchase_completed",
+  "timestamp": "2026-05-10T15:42:00Z",
+  "user_id": "usr_abc123",
+  "session_id": "sess_xyz789",
+  "properties": {
+    "order_id": "ord_xyz789",
+    "revenue": 231.08,
+    "tax": 23.09,
+    "shipping": 0.0,
+    "discount": 51.99,
+    "coupon_used": "SUMMER20",
+    "payment_method": "card",
+    "items": [
+      {
+        "product_id": "prod_headphones_001",
+        "variant_id": "var_black",
+        "name": "Premium Wireless Headphones",
+        "quantity": 2,
+        "unit_price": 129.99,
+        "total": 259.98
+      }
+    ]
+  },
+  "context": {
+    "ip": "203.0.113.42",
+    "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+    "locale": "en-US",
+    "page_url": "https://shop.example.com/checkout/confirmation",
+    "referrer": "https://shop.example.com/checkout"
+  }
+}
+```
+
+### Cart Abandoned Event
+
+```json
+{
+  "event_name": "cart_abandoned",
+  "timestamp": "2026-05-11T10:30:00Z",
+  "anonymous_id": "anon_xyz789",
+  "session_id": "sess_abc123",
+  "properties": {
+    "cart_value": 349.97,
+    "items_count": 3,
+    "products": [
+      {
+        "product_id": "prod_headphones_001",
+        "product_name": "Premium Wireless Headphones",
+        "quantity": 1,
+        "price": 199.99
+      },
+      {
+        "product_id": "prod_case_001",
+        "product_name": "Protective Case",
+        "quantity": 2,
+        "price": 74.99
+      }
+    ],
+    "last_activity": "2026-05-11T10:25:00Z",
+    "recovery_email_sent": false
+  }
+}
+```
+
+## Event Validation
+
+### Required Fields
+
+| Field        | Type   | Required | Description                                          |
+| ------------ | ------ | -------- | ---------------------------------------------------- |
+| `event_name` | string | Yes      | Must be 1-128 characters, alphanumeric + underscores |
+| `timestamp`  | string | Yes      | ISO 8601 format                                      |
+| `properties` | object | Yes      | At minimum, an empty object `{}`                     |
+
+### Property Constraints
+
+| Property Type    | Max Length | Notes                              |
+| ---------------- | ---------- | ---------------------------------- |
+| `event_name`     | 128 chars  | Alphanumeric + underscore          |
+| `user_id`        | 256 chars  | Alphanumeric + underscore + hyphen |
+| `property key`   | 128 chars  | Alphanumeric + underscore          |
+| `property value` | 1024 chars | Strings are truncated              |
+| `array items`    | 1000 items | Arrays are truncated               |
+| `object depth`   | 10 levels  | Objects are flattened              |
+
+### Validation Errors
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "message": "Event validation failed",
+    "code": "invalid_event",
+    "details": {
+      "errors": [
+        {
+          "field": "event_name",
+          "value": "invalid event name!",
+          "message": "Event name can only contain alphanumeric characters and underscores"
+        },
+        {
+          "field": "timestamp",
+          "value": "not-a-date",
+          "message": "Invalid ISO 8601 timestamp"
+        }
+      ]
+    },
+    "request_id": "req_abc123xyz"
+  }
+}
+```
+
+## User Identification
+
+### Identifying Users
+
+```typescript
+// Node.js
+client.analytics.identify({
+  userId: "usr_abc123",
+  anonymousId: "anon_xyz789",
+  traits: {
+    email: "sarah.chen@example.com",
+    name: "Sarah Chen",
+    created_at: "2026-01-15",
+    plan: "premium",
+    total_purchases: 12,
+    lifetime_value: 2450.0,
+  },
+});
+```
+
+### Trait Schema
+
+| Trait        | Type   | Description                                |
+| ------------ | ------ | ------------------------------------------ |
+| `email`      | string | User's email address                       |
+| `name`       | string | User's full name                           |
+| `first_name` | string | User's first name                          |
+| `last_name`  | string | User's last name                           |
+| `phone`      | string | Phone number                               |
+| `created_at` | string | Account creation date (ISO 8601)           |
+| `updated_at` | string | Last profile update (ISO 8601)             |
+| `plan`       | string | Subscription plan name                     |
+| `status`     | string | Account status (active, paused, cancelled) |
+
+### Anonymous vs Identified Users
+
+```
+Timeline:
+─────────────────────────────────────────────────────────────────▶
+
+Anonymous browsing          │  User signs up      │  Identified user
+────────────────────────────┼─────────────────────┼─────────────────
+                            │                     │
+anon_xyz789 (cookie)        │                     │ usr_abc123
+────────────────────────────┤─────────────────────┼─────────────────
+page_view                   │                     │
+product_viewed              │                     │
+add_to_cart                 │ user_signed_up ─────┼──▶ user_id linked
+                            │                     │    (historical events
+                            │                     │     now attributed)
+```
+
+<Callout type="info">
+  **Privacy:** User identification must comply with your privacy policy and
+  applicable regulations (GDPR, CCPA). Ensure users have consented to tracking
+  before identifying them. Provide clear opt-out mechanisms.
+</Callout>
+
+## Computing Metrics
+
+### Revenue Metrics
+
+```typescript
+// JavaScript
+const revenue = await client.analytics.compute({
+  metric: "revenue",
+  dimensions: ["date", "product_category"],
+  filters: {
+    date_range: { start: "2026-04-01", end: "2026-04-30" },
+  },
+  granularity: "day",
+});
+```
+
+### Funnels
+
+```typescript
+// JavaScript
+const funnel = await client.analytics.funnel({
+  steps: [
+    { event: "page_view", name: "Landing" },
+    { event: "product_viewed", name: "Viewed Product" },
+    { event: "add_to_cart", name: "Added to Cart" },
+    { event: "checkout_started", name: "Started Checkout" },
+    { event: "purchase_completed", name: "Purchased" },
+  ],
+  grouping: ["device_type", "traffic_source"],
+});
+```
+
+### Funnel Response
+
+```json
+{
+  "funnel": {
+    "name": "Purchase Funnel",
+    "steps": [
+      { "event": "page_view", "name": "Landing", "users": 10000 },
+      { "event": "product_viewed", "name": "Viewed Product", "users": 4200 },
+      { "event": "add_to_cart", "name": "Added to Cart", "users": 1800 },
+      {
+        "event": "checkout_started",
+        "name": "Started Checkout",
+        "users": 1200
+      },
+      { "event": "purchase_completed", "name": "Purchased", "users": 840 }
+    ]
+  },
+  "conversion_rates": {
+    "page_view_to_product_view": 42.0,
+    "product_view_to_cart": 42.86,
+    "cart_to_checkout": 66.67,
+    "checkout_to_purchase": 70.0,
+    "overall": 8.4
+  },
+  "drop_offs": {
+    "landing_to_product_view": 5800,
+    "product_view_to_cart": 2400,
+    "cart_to_checkout": 600,
+    "checkout_to_purchase": 360
+  }
+}
+```
+
+### Retention Analysis
+
+```python
+# Python
+retention = client.analytics.retention({
+    event: "purchase_completed",
+    starting_period: "2026-03-01",
+    retention_periods: [0, 7, 14, 30, 60, 90]
+})
+```
+
+### Retention Response
+
+```json
+{
+  "cohort": "2026-03-01",
+  "total_users": 1250,
+  "retention": [
+    { "period": 0, "users": 1250, "rate": 100.0 },
+    { "period": 7, "users": 875, "rate": 70.0 },
+    { "period": 14, "users": 625, "rate": 50.0 },
+    { "period": 30, "users": 438, "rate": 35.0 },
+    { "period": 60, "users": 250, "rate": 20.0 },
+    { "period": 90, "users": 125, "rate": 10.0 }
+  ]
+}
+```
+
+## Data Export
+
+### Exporting Raw Events
+
+```bash
+curl -X POST https://api.zephyr.com/v1/analytics/export \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_date": "2026-04-01T00:00:00Z",
+    "end_date": "2026-04-30T23:59:59Z",
+    "event_types": ["purchase_completed", "refund_initiated"],
+    "format": "jsonl",
+    "compression": "gzip",
+    "include_context": true
+  }'
+```
+
+### Export Response
+
+```json
+{
+  "export_id": "exp_abc123",
+  "status": "processing",
+  "estimated_completion": "2026-05-11T11:00:00Z",
+  "download_url": null
+}
+```
+
+### Poll for Export Completion
+
+```bash
+# Check export status
+curl -X GET https://api.zephyr.com/v1/analytics/exports/exp_abc123 \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+### Export Status Response
+
+```json
+{
+  "export_id": "exp_abc123",
+  "status": "completed",
+  "completed_at": "2026-05-11T10:45:00Z",
+  "download_url": "https://exports.zephyr.com/exp_abc123/events_2026-04.gz",
+  "expires_at": "2026-05-12T10:45:00Z",
+  "record_count": 15420,
+  "file_size_bytes": 2456789
+}
+```
+
+<Callout type="info">
+  **Export Limits:** Exports are limited to 10M events per request. For larger
+  exports, use the [Segment Export](/analytics/segments) feature or schedule
+  recurring exports.
+</Callout>
+
+### Available Export Formats
+
+| Format    | Description                           | Compression            |
+| --------- | ------------------------------------- | ---------------------- |
+| `jsonl`   | JSON Lines - one JSON object per line | `gzip`, `zip`, or none |
+| `csv`     | Comma-separated values                | `gzip`, `zip`, or none |
+| `parquet` | Apache Parquet format                 | `gzip` or none         |
+
+## SDK Configuration
+
+### Node.js SDK
+
+```javascript
+import { ZephyrAnalytics } from "@zephyr/analytics-sdk";
+
+const analytics = new ZephyrAnalytics({
+  apiKey: process.env.ZEPHYR_ANALYTICS_KEY,
+
+  // Batch settings
+  batch: {
+    enabled: true,
+    size: 20, // Flush after N events
+    flushInterval: 5000, // Or every N milliseconds
+    maxRetries: 3,
+  },
+
+  // Retry settings
+  retry: {
+    enabled: true,
+    maxRetries: 3,
+    initialDelay: 1000,
+  },
+
+  // Logging
+  debug: process.env.NODE_ENV === "development",
+});
+
+// Wrap your Express app
+analytics.connect(app);
+```
+
+### Python SDK
+
+```python
+from zephyr.analytics import Analytics
+
+analytics = Analytics(
+    api_key='sk_live_abc123...',
+    batch=True,
+    batch_size=20,
+    flush_interval=5.0,
+    max_retries=3,
+    debug=False
+)
+
+# Use context manager for proper cleanup
+with analytics:
+    analytics.track(user_id='usr_123', event_name='page_view')
+```
+
+## Error Handling
+
+### Event Error Response
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "message": "Event validation failed",
+    "code": "invalid_event_properties",
+    "details": {
+      "errors": [
+        {
+          "field": "properties.price",
+          "value": "not-a-number",
+          "message": "Price must be a number"
+        }
+      ]
+    },
+    "request_id": "req_abc123xyz"
+  }
+}
+```
+
+### Handling Event Failures
+
+```javascript
+// Node.js - Handle batch failures
+try {
+  const result = await client.analytics.trackBatch(events);
+
+  if (result.failed > 0) {
+    console.error(`${result.failed} events failed:`);
+    for (const error of result.errors) {
+      console.error(`  - Event ${error.event_index}: ${error.message}`);
+    }
+
+    // Retry failed events
+    const failedEvents = events.filter((_, i) =>
+      result.errors.some((e) => e.event_index === i),
+    );
+    // ... retry logic
+  }
+} catch (error) {
+  // Network or other errors - retry the entire batch
+  await retryBatch(events);
+}
+```
+
+## Next Steps
+
+- [Analytics Implementation](/examples/analytics-implementation) - Full analytics setup guide
+- [Funnels Analysis](/analytics/funnels) - Analyze conversion paths
+- [Segments](/analytics/segments) - Create user segments
+- [Webhook Handler](/tutorials/webhook-handler) - Process analytics webhooks
+- [Batch Processing](/tutorials/batch-processing) - High-volume event processing

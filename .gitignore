@@ -30,3 +30,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# local scripts and scratch files
+/scratch
+/update_branding.py

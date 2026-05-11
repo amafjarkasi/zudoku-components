@@ -1,0 +1,195 @@
+---
+title: Errors
+---
+
+
+Zephyr APIs use conventional HTTP status codes and a consistent JSON error format across all services. This page is your complete reference for diagnosing and handling errors programmatically.
+
+## Error Response Format
+
+Every error response body follows this structure:
+
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "The requested product could not be found.",
+    "details": {
+      "resourceType": "Product",
+      "resourceId": "prod_INVALID123"
+    },
+    "requestId": "req_01HX3P9QRSTUVWXY",
+    "docsUrl": "https://docs.zephyr.dev/errors#RESOURCE_NOT_FOUND"
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `code` | Machine-readable error code (use this in switch statements, not the message) |
+| `message` | Human-readable description |
+| `details` | Optional object with additional context |
+| `requestId` | Unique ID for this request — include this when contacting support |
+| `docsUrl` | Direct link to this error's documentation |
+
+## HTTP Status Code Summary
+
+| Status | Meaning | Retry? |
+|---|---|---|
+| `200` | Success | — |
+| `201` | Created | — |
+| `202` | Accepted (async job queued) | — |
+| `204` | No Content | — |
+| `400` | Bad Request — client error | ❌ Fix request |
+| `401` | Unauthorized — invalid or missing auth | ❌ Check credentials |
+| `403` | Forbidden — authenticated but no access | ❌ Check permissions |
+| `404` | Not Found | ❌ Check ID |
+| `409` | Conflict — state mismatch | ❌ Resolve conflict |
+| `422` | Unprocessable Entity — validation error | ❌ Fix payload |
+| `429` | Too Many Requests | ✅ After `Retry-After` |
+| `500` | Internal Server Error | ✅ With backoff |
+| `502` | Bad Gateway | ✅ With backoff |
+| `503` | Service Unavailable | ✅ With backoff |
+| `504` | Gateway Timeout | ✅ With backoff |
+
+## Error Code Reference
+
+### Authentication Errors
+
+| Code | Status | Description |
+|---|---|---|
+| `MISSING_AUTH_TOKEN` | 401 | No `Authorization` header provided |
+| `INVALID_AUTH_TOKEN` | 401 | Token is malformed or has an invalid signature |
+| `EXPIRED_AUTH_TOKEN` | 401 | JWT has passed its `exp` claim |
+| `REVOKED_AUTH_TOKEN` | 401 | Token was explicitly revoked |
+| `INVALID_API_KEY` | 401 | API key not found or inactive |
+| `INSUFFICIENT_SCOPE` | 403 | Token lacks the required OAuth scope |
+| `IP_NOT_WHITELISTED` | 403 | Request from an IP not in your allowlist |
+
+### Validation Errors
+
+| Code | Status | Description |
+|---|---|---|
+| `VALIDATION_ERROR` | 422 | One or more request fields failed validation |
+| `MISSING_REQUIRED_FIELD` | 422 | Required field not present in payload |
+| `INVALID_FIELD_TYPE` | 422 | Field value is the wrong type |
+| `INVALID_FIELD_VALUE` | 422 | Field value out of valid range |
+| `INVALID_ENUM_VALUE` | 422 | Value not in the allowed enum set |
+| `PAYLOAD_TOO_LARGE` | 413 | Request body exceeds 10 MB limit |
+
+Validation errors include a `details.fields` array to pinpoint each invalid field:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed.",
+    "details": {
+      "fields": [
+        {
+          "field": "price",
+          "message": "Must be a positive number greater than 0",
+          "receivedValue": -5
+        },
+        {
+          "field": "currency",
+          "message": "Must be one of: USD, EUR, GBP, CAD, AUD",
+          "receivedValue": "XYZ"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Resource Errors
+
+| Code | Status | Description |
+|---|---|---|
+| `RESOURCE_NOT_FOUND` | 404 | The specified resource does not exist |
+| `RESOURCE_ALREADY_EXISTS` | 409 | Duplicate resource creation attempted |
+| `RESOURCE_CONFLICT` | 409 | Resource state prevents the operation |
+| `RESOURCE_LOCKED` | 423 | Resource is locked by another operation |
+| `RESOURCE_DELETED` | 410 | Resource existed but has been permanently deleted |
+
+### Rate Limit Errors
+
+| Code | Status | Description |
+|---|---|---|
+| `RATE_LIMIT_EXCEEDED` | 429 | Per-minute or per-day limit reached |
+| `CONCURRENT_LIMIT_EXCEEDED` | 429 | Too many concurrent requests from same key |
+
+See the [Rate Limiting guide](/advanced/rate-limiting) for mitigation strategies.
+
+### Server Errors
+
+| Code | Status | Description |
+|---|---|---|
+| `INTERNAL_ERROR` | 500 | Unexpected server-side error |
+| `SERVICE_UNAVAILABLE` | 503 | Downstream dependency is down |
+| `GATEWAY_TIMEOUT` | 504 | Upstream service did not respond in time |
+
+<Callout type="info">
+  Server errors (`5xx`) are monitored by our on-call team and trigger automated alerts. You can check our status page at [status.zephyr.dev](https://status.zephyr.dev) for real-time incident information.
+</Callout>
+
+## Error Handling Patterns
+
+### Typed Error Handling (TypeScript)
+
+```typescript
+type ZephyrErrorCode =
+  | "MISSING_AUTH_TOKEN"
+  | "INVALID_AUTH_TOKEN"
+  | "RESOURCE_NOT_FOUND"
+  | "VALIDATION_ERROR"
+  | "RATE_LIMIT_EXCEEDED"
+  | "INTERNAL_ERROR";
+
+interface ZephyrError {
+  code: ZephyrErrorCode;
+  message: string;
+  details?: Record<string, unknown>;
+  requestId: string;
+  docsUrl: string;
+}
+
+async function handleApiError(response: Response): Promise<never> {
+  const { error }: { error: ZephyrError } = await response.json();
+
+  switch (error.code) {
+    case "INVALID_AUTH_TOKEN":
+    case "EXPIRED_AUTH_TOKEN":
+      // Trigger re-authentication flow
+      await refreshAuthToken();
+      throw new AuthError(error.message);
+
+    case "RATE_LIMIT_EXCEEDED":
+      // Delegate to retry logic
+      throw new RateLimitError(error.message, error.details);
+
+    case "VALIDATION_ERROR":
+      // Surface field errors to the user
+      throw new ValidationError(error.message, error.details);
+
+    case "RESOURCE_NOT_FOUND":
+      throw new NotFoundError(error.message);
+
+    default:
+      // Log server errors with requestId for support
+      console.error(`[${error.requestId}] API Error: ${error.message}`);
+      throw new ApiError(error.message, error.requestId);
+  }
+}
+```
+
+## Contacting Support
+
+When reaching out about an error, always include:
+
+1. **`requestId`** from the error response
+2. The **endpoint** and **HTTP method** you called
+3. A **sanitized** (no secrets) copy of your request headers and body
+4. The **timestamp** of the failed request
+
+You can open a support ticket at [support.zephyr.dev](https://support.zephyr.dev) or email `api-support@zephyr.dev`.

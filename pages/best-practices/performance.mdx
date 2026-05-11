@@ -1,0 +1,272 @@
+---
+title: Performance Best Practices
+---
+
+Optimize your API usage for speed, reduce latency, and minimize costs with these proven patterns.
+
+## Caching Strategies
+
+### Cache Frequently Accessed Data
+
+```typescript
+import { MemoryCache } from "@premium-api/cache";
+
+const cache = new MemoryCache({ ttl: 300 }); // 5 minute TTL
+
+async function getProductWithCache(productId: string) {
+  const cacheKey = `product:${productId}`;
+
+  // Check cache first
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  // Fetch from API
+  const product = await client.products.get(productId);
+
+  // Store in cache
+  cache.set(cacheKey, product);
+
+  return product;
+}
+```
+
+### Cache Product Catalogs
+
+```python
+response = client.products.list(
+    limit=100,
+    cache=True,
+    cache_ttl=300
+)
+
+import redis
+
+r = redis.Redis(host='localhost', port=6379)
+
+def get_products_cached():
+    cached = r.get('products:list')
+    if cached:
+        return json.loads(cached)
+
+    products = client.products.list()
+    r.setex('products:list', 300, json.dumps(products))
+    return products
+```
+
+## Request Optimization
+
+### Batch Requests
+
+```typescript
+// Instead of multiple requests
+const [products, customers, orders] = await Promise.all([
+  client.products.list({ limit: 100 }),
+  client.customers.list({ limit: 100 }),
+  client.orders.list({ limit: 100 }),
+]);
+
+// Use batch endpoint when available
+const batch = await client.batch.execute([
+  { operation: "products.list", params: { limit: 100 } },
+  { operation: "customers.list", params: { limit: 100 } },
+  { operation: "orders.list", params: { limit: 100 } },
+]);
+```
+
+### Use Field Filtering
+
+```typescript
+// Only fetch needed fields
+const orders = await client.orders.list({
+  fields: ["id", "status", "total", "created_at"],
+  limit: 50,
+});
+
+// Reduces response size by ~70%
+```
+
+### Pagination Strategy
+
+```python
+cursor = None
+all_products = []
+
+while True:
+    page = client.products.list(
+        limit=250,
+        cursor=cursor
+    )
+
+    all_products.extend(page['items'])
+
+    cursor = page['next_cursor']
+    if not cursor:
+        break
+
+last_sync = get_last_sync_time()
+new_products = client.products.list(
+    updated_after=last_sync,
+    limit=250
+)
+```
+
+## Connection Management
+
+### Reuse HTTP Connections
+
+```typescript
+// Configure persistent connections
+const client = new PremiumClient({
+  apiKey: process.env.PREMIUM_API_KEY,
+  httpOptions: {
+    keepAlive: true,
+    maxSockets: 50,
+    maxFreeSockets: 10,
+    timeout: 30000,
+  },
+});
+
+// Reuse the client across requests
+export { client };
+```
+
+### Use HTTP/2
+
+```python
+client = PremiumClient(
+    api_key='xxx',
+    http2=True  # Enable HTTP/2 multiplexing
+)
+```
+
+## Async Processing
+
+### Queue Non-critical Operations
+
+```python
+def handle_order_created(order):
+    # Process order immediately
+    process_order(order)
+
+    # Queue analytics for background processing
+    background_queue.enqueue(
+        'track_event',
+        event='order_created',
+        order_id=order.id,
+        priority='low'
+    )
+```
+
+### Use Webhooks for Updates
+
+```python
+@app.route('/webhook', methods=['POST'])
+def handle_webhook():
+    event = verify_webhook(request)
+
+    if event['type'] == 'order.updated':
+        # Update local state from webhook
+        update_local_order(event['data'])
+        # No need to poll!
+```
+
+## Response Handling
+
+### Stream Large Responses
+
+```typescript
+// For large file exports
+const stream = await client.analytics.export_stream({
+  format: "jsonl",
+  start_date: "2026-01-01",
+  end_date: "2026-04-30",
+});
+
+const writer = fs.createWriteStream("export.jsonl");
+
+stream.pipe(writer);
+
+stream.on("end", () => {
+  console.log("Export complete");
+});
+```
+
+### Compress Requests
+
+```python
+client = PremiumClient(
+    api_key='xxx',
+    compression=True  # Requests and responses compressed
+)
+```
+
+## Performance Monitoring
+
+### Track API Latency
+
+```typescript
+const perf = require("perf_hooks");
+
+function measureApiCall<T>(fn: () => Promise<T>, label: string): Promise<T> {
+  const start = perf.performance.now();
+
+  return fn().then((result) => {
+    const duration = perf.performance.now() - start;
+    console.log(`${label}: ${duration.toFixed(2)}ms`);
+
+    metrics.histogram("api.latency", duration, {
+      operation: label,
+    });
+
+    return result;
+  });
+}
+
+// Usage
+const products = await measureApiCall(
+  () => client.products.list(),
+  "products.list",
+);
+```
+
+### Set Up Alerts
+
+```python
+client.monitoring.create_alert({
+    'name': 'High API Latency',
+    'metric': 'p99_latency',
+    'threshold': 500,  # ms
+    'comparison': 'greater_than',
+    'window': '5m',
+    'notification': {
+        'type': 'webhook',
+        'url': 'https://hooks.example.com/alert'
+    }
+})
+```
+
+## Optimization Checklist
+
+- [ ] Response caching implemented
+- [ ] Batch API requests used
+- [ ] Field filtering enabled
+- [ ] Cursor pagination for large lists
+- [ ] HTTP connections reused
+- [ ] Webhooks instead of polling
+- [ ] Non-critical ops queued
+- [ ] Compression enabled
+- [ ] Latency monitoring active
+
+## Latency Benchmarks
+
+| Operation                   | Target    | Our Average |
+| --------------------------- | --------- | ----------- |
+| Simple read (product)       | &lt;50ms  | ~35ms       |
+| Complex read (orders+items) | &lt;100ms | ~75ms       |
+| Write operation             | &lt;100ms | ~60ms       |
+| Batch (100 items)           | &lt;200ms | ~150ms      |
+
+<Callout type="info">
+  **CDN Integration:** For globally distributed users, use our CDN edge
+  locations. Requests are automatically routed to the nearest server.
+</Callout>

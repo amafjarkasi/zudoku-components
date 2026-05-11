@@ -1,0 +1,110 @@
+---
+title: Feature Discovery Cards
+description: Browse features by category to find what you need
+---
+
+# Feature Discovery
+
+Explore our platform capabilities organized by category. Click any card to learn more.
+
+<div class="feature-discovery">
+  <div class="feature-grid">
+    <a href="/auth/getting-started" class="feature-card">
+      <div class="feature-card-icon">🔐</div>
+      <div class="feature-card-title">Authentication</div>
+      <div class="feature-card-desc">Secure API access with OAuth2, API keys, and JWT tokens</div>
+      <div class="feature-card-link">Explore auth →</div>
+    </a>
+
+    <a href="/ecommerce/products" class="feature-card">
+      <div class="feature-card-icon">🛒</div>
+      <div class="feature-card-title">E-Commerce</div>
+      <div class="feature-card-desc">Products, orders, inventory, and shipping management</div>
+      <div class="feature-card-link">Explore commerce →</div>
+    </a>
+
+    <a href="/analytics/events" class="feature-card">
+      <div class="feature-card-icon">📊</div>
+      <div class="feature-card-title">Analytics</div>
+      <div class="feature-card-desc">Track events, build funnels, and segment users</div>
+      <div class="feature-card-link">Explore analytics →</div>
+    </a>
+
+    <a href="/integrations/webhooks" class="feature-card">
+      <div class="feature-card-icon">🔄</div>
+      <div class="feature-card-title">Webhooks</div>
+      <div class="feature-card-desc">Real-time event notifications for your integrations</div>
+      <div class="feature-card-link">Explore webhooks →</div>
+    </a>
+
+    <a href="/sdks/react" class="feature-card">
+      <div class="feature-card-icon">⚛️</div>
+      <div class="feature-card-title">React SDK</div>
+      <div class="feature-card-desc">Pre-built React components for fast integration</div>
+      <div class="feature-card-link">Explore SDK →</div>
+    </a>
+
+    <a href="/guides/rate-limits" class="feature-card">
+      <div class="feature-card-icon">⚡</div>
+      <div class="feature-card-title">Rate Limiting</div>
+      <div class="feature-card-desc">Understand API limits and optimization strategies</div>
+      <div class="feature-card-link">Learn more →</div>
+    </a>
+  </div>
+</div>
+
+<style>{`
+  .feature-discovery {
+    margin: 2rem 0;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .feature-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.15);
+    border-color: var(--primary);
+  }
+
+  .feature-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .feature-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--foreground);
+  }
+
+  .feature-card-desc {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .feature-card-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--primary);
+    margin-top: 1rem;
+  }
+`}</style>

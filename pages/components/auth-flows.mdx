@@ -1,0 +1,283 @@
+---
+title: Authentication Flow Diagrams
+description: Visual guides for OAuth2 and authentication flows
+---
+
+# Authentication Flows
+
+Step-by-step diagrams showing how authentication works with the Zu API.
+
+## API Key Authentication
+
+Simplest method for server-to-server communication.
+
+<div class="auth-flow-diagram">
+  <div class="auth-flow-step auth-flow-step--action">
+    <div class="auth-flow-number">1</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">Generate API Key</div>
+      <div class="auth-flow-desc">Create an API key in the Zu Dashboard → Settings → API Keys</div>
+    </div>
+  </div>
+  <div class="auth-flow-connector">→</div>
+  <div class="auth-flow-step auth-flow-step--action">
+    <div class="auth-flow-number">2</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">Include in Request</div>
+      <div class="auth-flow-desc">Add the API key to the Authorization header</div>
+    </div>
+  </div>
+  <div class="auth-flow-connector">→</div>
+  <div class="auth-flow-step auth-flow-step--success">
+    <div class="auth-flow-number">3</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">API Response</div>
+      <div class="auth-flow-desc">Request authenticated successfully</div>
+    </div>
+  </div>
+</div>
+
+```bash
+curl -H "Authorization: Bearer zk_test_abc123..." \
+  https://api.zu.com/v1/products
+```
+
+## OAuth 2.0 Authorization Code Flow
+
+For apps that act on behalf of users.
+
+<div class="auth-flow-diagram auth-flow-diagram--oauth">
+  <div class="auth-flow-row">
+    <div class="auth-flow-step auth-flow-step--action">
+      <div class="auth-flow-number">1</div>
+      <div class="auth-flow-content">
+        <div class="auth-flow-title">User Clicks "Login"</div>
+        <div class="auth-flow-desc">Your app redirects to Zu authorization URL</div>
+      </div>
+    </div>
+    <div class="auth-flow-connector">→</div>
+    <div class="auth-flow-step auth-flow-step--decision">
+      <div class="auth-flow-number">2</div>
+      <div class="auth-flow-content">
+        <div class="auth-flow-title">User Approves</div>
+        <div class="auth-flow-desc">User logs in and grants permissions</div>
+      </div>
+    </div>
+    <div class="auth-flow-connector">→</div>
+    <div class="auth-flow-step auth-flow-step--success">
+      <div class="auth-flow-number">3</div>
+      <div class="auth-flow-content">
+        <div class="auth-flow-title">Get Code</div>
+        <div class="auth-flow-desc">Redirect back with authorization code</div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-flow-connector-down">↓</div>
+  <div class="auth-flow-row">
+    <div class="auth-flow-step auth-flow-step--action">
+      <div class="auth-flow-number">4</div>
+      <div class="auth-flow-content">
+        <div class="auth-flow-title">Exchange Code</div>
+        <div class="auth-flow-desc">POST code to token endpoint</div>
+      </div>
+    </div>
+    <div class="auth-flow-connector">→</div>
+    <div class="auth-flow-step auth-flow-step--action">
+      <div class="auth-flow-number">5</div>
+      <div class="auth-flow-content">
+        <div class="auth-flow-title">Receive Tokens</div>
+        <div class="auth-flow-desc">Access token + refresh token returned</div>
+      </div>
+    </div>
+    <div class="auth-flow-connector">→</div>
+    <div class="auth-flow-step auth-flow-step--success">
+      <div class="auth-flow-number">6</div>
+      <div class="auth-flow-content">
+        <div class="auth-flow-title">Use Access Token</div>
+        <div class="auth-flow-desc">Make API requests on behalf of user</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+### Authorization URL Format
+
+```
+https://auth.zu.com/oauth/authorize?
+  client_id=YOUR_CLIENT_ID&
+  redirect_uri=https://yourapp.com/callback&
+  response_type=code&
+  scope=ecommerce:read analytics:write
+```
+
+### Token Exchange Request
+
+```bash
+curl -X POST https://auth.zu.com/oauth/token \
+  -d "grant_type=authorization_code" \
+  -d "code=AUTH_CODE" \
+  -d "redirect_uri=https://yourapp.com/callback" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET"
+```
+
+### Token Response
+
+```json
+{
+  "access_token": "zk_access_xyz789...",
+  "refresh_token": "zk_refresh_abc456...",
+  "expires_in": 3600,
+  "token_type": "Bearer",
+  "scope": "ecommerce:read analytics:write"
+}
+```
+
+## JWT Authentication
+
+Short-lived tokens for user sessions.
+
+<div class="auth-flow-diagram auth-flow-diagram--jwt">
+  <div class="auth-flow-step auth-flow-step--action">
+    <div class="auth-flow-number">1</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">User Logs In</div>
+      <div class="auth-flow-desc">Credentials validated against Auth API</div>
+    </div>
+  </div>
+  <div class="auth-flow-connector">→</div>
+  <div class="auth-flow-step auth-flow-step--success">
+    <div class="auth-flow-number">2</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">JWT Issued</div>
+      <div class="auth-flow-desc">Short-lived token (15min) returned</div>
+    </div>
+  </div>
+  <div class="auth-flow-connector">→</div>
+  <div class="auth-flow-step auth-flow-step--action">
+    <div class="auth-flow-number">3</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">API Request</div>
+      <div class="auth-flow-desc">JWT included in Authorization header</div>
+    </div>
+  </div>
+  <div class="auth-flow-connector">→</div>
+  <div class="auth-flow-step auth-flow-step--success">
+    <div class="auth-flow-number">4</div>
+    <div class="auth-flow-content">
+      <div class="auth-flow-title">Token Verified</div>
+      <div class="auth-flow-desc">JWT signature validated, user identity extracted</div>
+    </div>
+  </div>
+</div>
+
+<Callout type="info">
+**JWT vs API Keys:** JWTs are user-scoped and expire automatically. API keys are static and server-scoped. Choose based on whether you need user context or just API access.
+</Callout>
+
+<style>{`
+  .auth-flow-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .auth-flow-diagram--oauth,
+  .auth-flow-diagram--jwt {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .auth-flow-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .auth-flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    flex: 1;
+    background: var(--background);
+  }
+
+  .auth-flow-step--action {
+    border-left: 3px solid var(--primary);
+  }
+
+  .auth-flow-step--decision {
+    border-left: 3px solid #92400e;
+  }
+
+  .auth-flow-step--success {
+    border-left: 3px solid #166534;
+  }
+
+  .auth-flow-number {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+
+  .auth-flow-content {
+    flex: 1;
+  }
+
+  .auth-flow-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .auth-flow-desc {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    line-height: 1.4;
+  }
+
+  .auth-flow-connector {
+    display: none;
+  }
+
+  .auth-flow-connector-down {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--muted-foreground);
+    padding: 0.5rem 0;
+  }
+
+  @media (min-width: 768px) {
+    .auth-flow-diagram {
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .auth-flow-connector {
+      display: block;
+      font-size: 1.25rem;
+      color: var(--muted-foreground);
+      padding: 0 0.5rem;
+    }
+  }
+`}</style>

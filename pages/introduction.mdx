@@ -1,16 +1,419 @@
 ---
-title: Welcome to Zudoku
+title: Introduction
+description: Welcome to the Zephyr Developer Portal — the fastest way to integrate e-commerce, analytics, and auth into your product.
 ---
 
-Thanks for choosing to use Zudoku to power your API documentation!
 
-## Edit this page
+Your comprehensive gateway for integrating e-commerce, analytics, and authentication services directly into your applications.
 
-To edit this page, open the `pages/introduction.mdx` file.
+Our APIs are designed to be **fast**, **reliable**, and **developer-friendly**. We provide RESTful endpoints, robust webhooks, and comprehensive SDKs to get you to production faster.
 
-## Configuration
+## Why Zephyr?
 
-You can find the full configuration for your Zudoku site in the `zudoku.config.tsx` file.
+Built by developers, for developers. We understand the pain points of API integration and have designed our platform to eliminate common friction points.
 
-For further information on how to customize your site, check out the
-[Zudoku documentation](https://zudoku.dev/docs).
+### 🚀 Lightning Fast Performance
+
+- **99.99% Uptime SLA** across all services
+- **Global CDN** with edge locations in 50+ regions
+- **Sub-50ms P95 latency** for most endpoints
+- **Automatic caching** and intelligent request routing
+
+### 🔒 Enterprise-Grade Security
+
+- **OAuth 2.0 and OpenID Connect** compliant authentication
+- **Role-based access control** (RBAC) with fine-grained permissions
+- **SOC 2 Type II** and **GDPR** compliant
+- **API key rotation** and IP whitelisting built-in
+
+### 📊 Real-Time Analytics
+
+- **Event tracking** with sub-millisecond ingestion latency
+- **Custom dashboards** and funnel analysis
+- **A/B testing** framework with automatic variant assignment
+- **Retention cohorts** and user journey mapping
+
+### 🛒 Complete E-Commerce Engine
+
+- **Product catalog** management with variants and pricing tiers
+- **Cart and checkout** flow with multiple payment processors
+- **Inventory sync** across multiple warehouses
+- **Shipping and tax** calculation integration
+
+## Core Services
+
+| Service | Description | Use Case |
+|---------|-------------|----------|
+| **Authentication** | OAuth 2.0, SSO, API key management | Secure user authentication and API access |
+| **E-Commerce** | Products, orders, inventory, shipping | Building online stores and marketplaces |
+| **Analytics** | Event tracking, funnels, segments | Understanding user behavior and product metrics |
+| **Webhooks** | Real-time event notifications | Integrating with external systems |
+| **SDKs** | Official libraries for popular languages | Faster development with type safety |
+
+## Features at a Glance
+
+- **E-Commerce Engine:** Manage products, carts, and end-to-end order processing
+- **Real-time Analytics:** Track custom events and query complex metrics with sub-second latency
+- **Enterprise Auth:** Seamless OAuth2 integration, SSO, and granular API key permissions
+- **Webhooks:** Reliable event delivery with retry logic and signature verification
+- **Rate Limiting:** Configurable per-key rate limits with burst handling
+- **API Versioning:** Backward-compatible versioning strategy
+- **Developer Tools:** Interactive API docs, SDKs, and debugging tools
+
+<Callout type="info">
+  **New to our platform?** We recommend starting with our [Authentication Guide](/auth/getting-started) to get your API keys before diving into the individual services.
+
+  **Already have credentials?** Jump directly to our [Quick Start Guide](#quick-start) below.
+</Callout>
+
+## Interactive Documentation
+
+This portal is fully interactive! You can:
+
+- **Test API endpoints** directly from your browser in the API Reference sections
+- **Copy code examples** with one click
+- **Navigate between services** using the sidebar
+- **Search documentation** with the search bar above
+
+Simply plug in your API key in the top right corner and start making live requests against our sandbox environment.
+
+## Quick Start
+
+Get up and running in 5 minutes:
+
+### Step 1: Create an Account
+
+Visit [dashboard.zephyr.com/signup](https://dashboard.zephyr.com/signup) and sign up using your email or social accounts.
+
+### Step 2: Get Your API Keys
+
+1. Navigate to **Settings > API Keys** in your dashboard
+2. Click **Generate New Key**
+3. Give it a descriptive name (e.g., "Development Key")
+4. **Copy the key immediately** - you won't see it again!
+
+```bash
+# Your API key looks like this:
+sk_live_abc123xyz789def456...
+```
+
+<Callout type="info">
+  **Security Warning:** Never commit your API keys to version control. Use environment variables or secret management systems to store them securely.
+</Callout>
+
+### Step 3: Make Your First Request
+
+Test your API key with a simple request to list products:
+
+```bash
+curl -X GET https://api.zephyr.com/v1/products \
+  -H "Authorization: Bearer sk_live_abc123xyz789def456..." \
+  -H "Content-Type: application/json"
+```
+
+**Expected response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "prod_abc123",
+      "name": "Premium Wireless Headphones",
+      "description": "High-quality Bluetooth headphones with noise cancellation",
+      "price": 199.99,
+      "currency": "USD",
+      "inventory_count": 150,
+      "created_at": "2026-05-10T00:00:00Z",
+      "updated_at": "2026-05-10T00:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 1
+  }
+}
+```
+
+### Step 4: Install an SDK
+
+Choose your language and install our official SDK:
+
+```bash
+# Node.js / JavaScript
+npm install @zephyr/node-sdk
+
+# Python
+pip install zephyr
+
+# React
+npm install @zephyr/react-sdk
+
+# Go
+go get github.com/zephyr/go-sdk
+
+# Ruby
+gem install zephyr
+```
+
+### Step 5: Initialize and Make Your First Call
+
+```javascript
+// Node.js / JavaScript
+import { ZephyrClient } from '@zephyr/node-sdk';
+
+const client = new ZephyrClient({
+  apiKey: 'sk_live_abc123xyz789def456...'
+});
+
+// List products
+const products = await client.products.list({ limit: 10 });
+console.log(products);
+```
+
+```python
+# Python
+from zephyr import ZephyrClient
+
+client = ZephyrClient(api_key='sk_live_abc123xyz789def456...')
+
+# List products
+products = client.products.list(limit=10)
+print(products)
+```
+
+```tsx
+// React
+import { useProducts } from '@zephyr/react-sdk';
+
+function ProductList() {
+  const { data: products, isLoading, error } = useProducts({ limit: 10 });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {products.map(product => (
+        <li key={product.id}>{product.name} - ${product.price}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## What's Next?
+
+Now that you're set up, explore our detailed guides:
+
+- [Authentication](/auth/getting-started) - Learn about OAuth2, API keys, and SSO
+- [E-Commerce](/ecommerce/products) - Manage products, orders, and inventory
+- [Analytics](/analytics/events) - Track events and build dashboards
+- [SDKs](/sdks/react) - Use our official SDKs in your projects
+- [Integrations](/integrations/webhooks) - Set up webhooks and third-party integrations
+- [Best Practices](/best-practices/security) - Security, performance, and reliability guidelines
+
+## Pricing
+
+Choose the plan that fits your needs:
+
+| Feature | Free | Pro ($99/mo) | Enterprise |
+|---------|------|--------------|------------|
+| API Requests | 1,000/day | 100,000/day | Unlimited |
+| Analytics Retention | 30 days | 90 days | Unlimited |
+| Support | Community | Email (24h) | Dedicated (1h) |
+| API Keys | 1 | 10 | Unlimited |
+| Custom Rate Limits | No | Yes | Yes |
+| Custom Domain | No | No | Yes |
+| SSO | No | No | Yes |
+
+<Callout type="info">
+  **Pro Tip:** Start with our free tier to explore the platform. Upgrade to Pro when you're ready for production usage.
+</Callout>
+
+## Getting Help
+
+If you get stuck during your implementation:
+
+1. **AI Search** - Use the search bar at the top to ask questions directly to our documentation bot
+2. **Slack Community** - Join [zephyr.dev/slack](https://zephyr.dev/slack) for real-time help from other developers
+3. **Support Tickets** - Open a ticket via your [developer dashboard](https://dashboard.zephyr.com/support)
+4. **GitHub Issues** - Browse and report issues at [github.com/zephyr/sdk](https://github.com/zephyr/sdk)
+5. **Status Page** - Check [status.zephyr.com](https://status.zephyr.com) for ongoing incidents
+
+## What's New?
+
+### Recent Updates (May 2026)
+
+**v2.5.0 Release**
+- 🎉 New **GraphQL API** beta available for enterprise customers
+- ✨ **Batch operations** for products and orders (up to 100 items per request)
+- 🔧 Enhanced **error responses** with detailed troubleshooting steps
+- 📊 New **analytics events**: `checkout.started`, `checkout.completed`, `payment.failed`
+- 🌐 Added support for **webhook signatures** with HMAC-SHA256
+
+**Upcoming Features**
+- 🔄 Real-time inventory sync via WebSocket
+- 📱 Native mobile SDKs (iOS/Android)
+- 🎨 Custom branding for checkout pages
+- 🤖 AI-powered product recommendations
+- 📊 Advanced reporting with export to CSV/PDF
+
+## Architecture Overview
+
+Our platform is built on a modern microservices architecture designed for scale and reliability:
+
+<Mermaid chart={`
+flowchart TD
+    subgraph CDN [Global CDN Layer]
+        C[Cloudflare + AWS CloudFront]
+    end
+    
+    CDN --> GW[API Gateway]
+    
+    subgraph GW_Details [API Gateway Layer]
+        direction TB
+        GW_1[Auth & Authz]
+        GW_2[Rate Limiting]
+        GW_3[Routing]
+        GW_4[WAF Protection]
+    end
+    
+    GW --- GW_Details
+    
+    GW_Details --> AuthS[Auth Service]
+    GW_Details --> CoreS[Core Services]
+    
+    subgraph Core [Core Platform Services]
+        direction LR
+        Ecommerce[E-Commerce Service]
+        Analytics[Analytics Service]
+    end
+    
+    CoreS --- Core
+    
+    Core --- DB[(PostgreSQL Primary DB)]
+    Core --- Cache[(Redis Cache)]
+    Core --- Bus[Kafka Event Bus]
+    
+    subgraph Storage [Persistence & Messaging]
+        DB
+        Cache
+        Bus
+    end
+`} />
+
+## API Response Format
+
+All API responses follow a consistent format:
+
+```json
+{
+  "data": {
+    // Actual response data
+  },
+  "meta": {
+    "request_id": "req_abc123xyz",
+    "timestamp": "2026-05-10T15:30:00Z",
+    "version": "2.5.0"
+  }
+}
+```
+
+For list endpoints:
+
+```json
+{
+  "data": [
+    // Array of items
+  ],
+  "meta": {
+    "total": 100,
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 5,
+    "request_id": "req_abc123xyz",
+    "timestamp": "2026-05-10T15:30:00Z"
+  }
+}
+```
+
+## Error Handling
+
+Errors are returned with appropriate HTTP status codes and detailed information:
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "message": "Invalid API key provided",
+    "code": "invalid_api_key",
+    "details": {
+      "field": "Authorization",
+      "reason": "API key not found or expired"
+    },
+    "request_id": "req_abc123xyz",
+    "timestamp": "2026-05-10T15:30:00Z"
+  }
+}
+```
+
+Common error codes:
+- `invalid_api_key` - Invalid or expired API key
+- `rate_limit_exceeded` - Too many requests
+- `insufficient_permissions` - API key lacks required permissions
+- `resource_not_found` - Requested resource doesn't exist
+- `validation_error` - Invalid request parameters
+- `server_error` - Internal server error (retry with exponential backoff)
+
+See our [Error Handling Guide](/advanced/errors) for more details.
+
+## Rate Limiting
+
+API requests are rate-limited to ensure fair usage and system stability:
+
+| Plan | Requests/Minute | Requests/Hour | Burst Allowance |
+|------|-----------------|---------------|-----------------|
+| Free | 10 | 100 | 20 |
+| Pro | 100 | 1,000 | 200 |
+| Enterprise | Custom | Custom | Custom |
+
+Rate limit headers are included in every response:
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1715347600
+```
+
+When rate limits are exceeded, you'll receive a `429 Too Many Requests` response with a `Retry-After` header.
+
+See our [Rate Limiting Guide](/advanced/rate-limiting) for best practices on handling rate limits.
+
+## Web Versioning
+
+We follow semantic versioning for our API: `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Breaking changes (rare, announced well in advance)
+- **MINOR**: New features, backward-compatible
+- **PATCH**: Bug fixes and minor improvements
+
+Current stable version: **v2.5.0**
+
+Always specify the API version in your requests:
+
+```bash
+# Using the Accept header
+curl -X GET https://api.zephyr.com/v1/products \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Accept: application/vnd.zephyr.v2.5+json"
+
+# Or use the version prefix
+curl -X GET https://api.zephyr.com/v2.5/products \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+---
+
+Ready to build something amazing? Let's get started with [Authentication](/auth/getting-started)!

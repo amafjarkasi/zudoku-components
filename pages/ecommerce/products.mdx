@@ -1,0 +1,810 @@
+---
+title: Products API
+description: Comprehensive guide to managing products, variants, pricing, and inventory
+---
+
+
+The Products API is the core of Zephyr's e-commerce engine. It allows you to build a comprehensive product catalog, manage inventory, handle variants, and sync product data across multiple channels.
+
+## Overview
+
+A `Product` in our system is more than just a name and price. It's a complex entity that supports:
+
+- **Multiple variants** (size, color, material, etc.)
+- **Dynamic pricing tiers** (base price, sale price, bulk pricing)
+- **Regional availability** and localization
+- **Rich media** (images, videos, documents)
+- **Custom attributes** and metadata
+- **Inventory tracking** across multiple warehouses
+- **Multi-channel synchronization** (web, mobile, marketplace)
+
+## Product Object
+
+### Base Product Structure
+
+```json
+{
+  "id": "prod_abc123xyz789",
+  "name": "Premium Wireless Headphones",
+  "slug": "premium-wireless-headphones",
+  "description": "High-quality Bluetooth headphones with active noise cancellation",
+  "short_description": "Premium audio experience with 40-hour battery life",
+  "status": "active",
+  "type": "physical",
+  "created_at": "2026-05-01T00:00:00Z",
+  "updated_at": "2026-05-10T14:30:00Z",
+  "published_at": "2026-05-01T00:00:00Z",
+  "categories": ["electronics", "audio", "headphones"],
+  "tags": ["wireless", "bluetooth", "noise-cancelling", "premium"],
+  "seo": {
+    "title": "Premium Wireless Headphones | Best Noise-Cancelling Audio",
+    "description": "Experience premium sound quality with our wireless headphones featuring active noise cancellation",
+    "keywords": ["wireless headphones", "bluetooth audio", "noise cancelling"]
+  },
+  "media": {
+    "images": [
+      {
+        "id": "img_abc123",
+        "url": "https://cdn.zephyr.com/products/headphones-main.jpg",
+        "alt": "Front view of Premium Wireless Headphones",
+        "width": 800,
+        "height": 800,
+        "position": 1
+      }
+    ],
+    "videos": [],
+    "documents": []
+  },
+  "attributes": {
+    "brand": "Zephyr Audio",
+    "model": "SH-2024",
+    "warranty": "2 years",
+    "color": "Black",
+    "weight": "250g",
+    "dimensions": {
+      "length": "18cm",
+      "width": "15cm",
+      "height": "8cm"
+    }
+  },
+  "pricing": {
+    "currency": "USD",
+    "base_price": 199.99,
+    "compare_at_price": 249.99,
+    "cost_price": 89.99,
+    "tax_class": "standard"
+  },
+  "inventory": {
+    "track_quantity": true,
+    "inventory_policy": "continue",
+    "quantity": 150,
+    "available": true
+  },
+  "shipping": {
+    "requires_shipping": true,
+    "weight": 250,
+    "weight_unit": "g",
+    "hs_code": "8518.30.20"
+  },
+  "variants": []
+}
+```
+
+### Product Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `physical` | Tangible products that require shipping | Clothing, electronics, furniture |
+| `digital` | Downloadable or streamable products | E-books, software, music |
+| `service` | Time-based or appointment-based services | Consulting, appointments |
+| `gift_card` | Prepaid gift cards with fixed value | $50 gift card |
+| `bundle` | Collection of products sold together | Product bundle with discount |
+
+### Product Status
+
+| Status | Description | API Behavior |
+|--------|-------------|--------------|
+| `draft` | Not visible to customers | Hidden from all queries |
+| `active` | Visible and purchasable | Available in queries and cart |
+| `archived` | Not purchasable but visible | Read-only, cannot be purchased |
+| `deleted` | Soft deleted | Excluded from all queries |
+
+## Product Variants
+
+Variants allow you to sell the same product in different configurations (size, color, material, etc.).
+
+### Variant Object
+
+```json
+{
+  "id": "var_def456uvw123",
+  "product_id": "prod_abc123xyz789",
+  "name": "Premium Wireless Headphones - Black",
+  "sku": "SH-2024-BLK",
+  "barcode": "1234567890123",
+  "price": 199.99,
+  "compare_at_price": 249.99,
+  "cost_price": 89.99,
+  "weight": 250,
+  "inventory_quantity": 50,
+  "available": true,
+  "attributes": {
+    "color": "Black",
+    "size": "One Size"
+  },
+  "image": {
+    "id": "img_abc123",
+    "url": "https://cdn.zephyr.com/products/headphones-black.jpg"
+  },
+  "position": 1
+}
+```
+
+### Variant Example: T-Shirt with Multiple Variants
+
+```json
+{
+  "id": "prod_shirt001",
+  "name": "Classic Cotton T-Shirt",
+  "variants": [
+    {
+      "id": "var_shirt_red_s",
+      "name": "Classic Cotton T-Shirt - Red / Small",
+      "sku": "SHIRT-RED-S",
+      "price": 29.99,
+      "inventory_quantity": 100,
+      "attributes": {
+        "color": "Red",
+        "size": "Small"
+      }
+    },
+    {
+      "id": "var_shirt_red_m",
+      "name": "Classic Cotton T-Shirt - Red / Medium",
+      "sku": "SHIRT-RED-M",
+      "price": 29.99,
+      "inventory_quantity": 150,
+      "attributes": {
+        "color": "Red",
+        "size": "Medium"
+      }
+    },
+    {
+      "id": "var_shirt_blue_l",
+      "name": "Classic Cotton T-Shirt - Blue / Large",
+      "sku": "SHIRT-BLU-L",
+      "price": 29.99,
+      "inventory_quantity": 75,
+      "attributes": {
+        "color": "Blue",
+        "size": "Large"
+      }
+    }
+  ]
+}
+```
+
+<Callout type="info">
+  **Inventory Warning:** Always check the `inventory_quantity` on the specific **variant**, not the parent product, to ensure an item is actually in stock before allowing a customer to add it to their cart.
+</Callout>
+
+## API Endpoints
+
+### List Products
+
+Retrieve a paginated list of products with optional filtering.
+
+```bash
+GET /v1/products
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number (default: 1) |
+| `per_page` | integer | No | Items per page (default: 20, max: 100) |
+| `status` | string | No | Filter by status (`draft`, `active`, `archived`) |
+| `category` | string | No | Filter by category slug |
+| `tag` | string | No | Filter by tag |
+| `search` | string | No | Search in name, description, SKU |
+| `sort` | string | No | Sort field (`created_at`, `name`, `price`) |
+| `order` | string | No | Sort order (`asc`, `desc`) |
+| `since_id` | string | No | Only return products created after this ID |
+| `ids` | array | No | Filter by specific product IDs |
+
+**Example Request:**
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/products?page=1&per_page=20&status=active&sort=created_at&order=desc" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json"
+```
+
+**Example Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "prod_abc123",
+      "name": "Premium Wireless Headphones",
+      "price": 199.99,
+      "status": "active",
+      "created_at": "2026-05-01T00:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 1250,
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 63
+  }
+}
+```
+
+### Get Product
+
+Retrieve a single product by ID.
+
+```bash
+GET /v1/products/{id}
+```
+
+**Path Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Product ID |
+
+**Example Request:**
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/products/prod_abc123" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json"
+```
+
+### Create Product
+
+Create a new product.
+
+```bash
+POST /v1/products
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "Premium Wireless Headphones",
+  "description": "High-quality Bluetooth headphones with active noise cancellation",
+  "type": "physical",
+  "status": "active",
+  "categories": ["electronics", "audio"],
+  "pricing": {
+    "currency": "USD",
+    "base_price": 199.99,
+    "compare_at_price": 249.99,
+    "cost_price": 89.99
+  },
+  "inventory": {
+    "track_quantity": true,
+    "inventory_policy": "continue",
+    "quantity": 100
+  },
+  "shipping": {
+    "requires_shipping": true,
+    "weight": 250,
+    "weight_unit": "g"
+  },
+  "variants": [
+    {
+      "name": "Black",
+      "sku": "SH-2024-BLK",
+      "price": 199.99,
+      "inventory_quantity": 50,
+      "attributes": {
+        "color": "Black"
+      }
+    }
+  ]
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/products" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d @product.json
+```
+
+### Update Product
+
+Update an existing product.
+
+```bash
+PUT /v1/products/{id}
+```
+
+**Request Body:** Same as create product (all fields are optional).
+
+**Example Request:**
+
+```bash
+curl -X PUT "https://api.zephyr.com/v1/products/prod_abc123" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Premium Wireless Headphones Pro",
+    "price": 219.99
+  }'
+```
+
+### Delete Product
+
+Delete a product (soft delete).
+
+```bash
+DELETE /v1/products/{id}
+```
+
+**Example Request:**
+
+```bash
+curl -X DELETE "https://api.zephyr.com/v1/products/prod_abc123" \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+### Bulk Operations
+
+#### Bulk Create Products
+
+Create multiple products in a single request (up to 100 products).
+
+```bash
+POST /v1/products/bulk
+```
+
+**Request Body:**
+
+```json
+{
+  "products": [
+    {
+      "name": "Product 1",
+      "price": 99.99
+    },
+    {
+      "name": "Product 2",
+      "price": 149.99
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "prod_abc123",
+      "status": "created"
+    },
+    {
+      "id": "prod_def456",
+      "status": "created"
+    }
+  ],
+  "meta": {
+    "total": 2,
+    "created": 2,
+    "failed": 0
+  }
+}
+```
+
+#### Bulk Update Products
+
+Update multiple products at once.
+
+```bash
+PUT /v1/products/bulk
+```
+
+**Request Body:**
+
+```json
+{
+  "updates": [
+    {
+      "id": "prod_abc123",
+      "price": 179.99
+    },
+    {
+      "id": "prod_def456",
+      "status": "archived"
+    }
+  ]
+}
+```
+
+## Pricing Strategies
+
+### Tiered Pricing
+
+Implement quantity-based discounts:
+
+```json
+{
+  "id": "prod_abc123",
+  "name": "Wholesale T-Shirt",
+  "pricing": {
+    "base_price": 29.99,
+    "tiered_pricing": [
+      {
+        "min_quantity": 1,
+        "max_quantity": 9,
+        "price": 29.99
+      },
+      {
+        "min_quantity": 10,
+        "max_quantity": 49,
+        "price": 24.99
+      },
+      {
+        "min_quantity": 50,
+        "max_quantity": null,
+        "price": 19.99
+      }
+    ]
+  }
+}
+```
+
+### Sale Pricing
+
+Set temporary sale prices:
+
+```json
+{
+  "id": "prod_abc123",
+  "name": "Summer Collection T-Shirt",
+  "pricing": {
+    "base_price": 49.99,
+    "compare_at_price": 79.99,
+    "sale": {
+      "active": true,
+      "price": 39.99,
+      "starts_at": "2026-05-01T00:00:00Z",
+      "ends_at": "2026-05-31T23:59:59Z"
+    }
+  }
+}
+```
+
+### Currency Support
+
+Products can have different prices for different currencies:
+
+```json
+{
+  "id": "prod_abc123",
+  "pricing": {
+    "base_price": 199.99,
+    "currency": "USD",
+    "prices": [
+      {
+        "currency": "EUR",
+        "price": 184.99
+      },
+      {
+        "currency": "GBP",
+        "price": 159.99
+      },
+      {
+        "currency": "JPY",
+        "price": 22000
+      }
+    ]
+  }
+}
+```
+
+## Inventory Management
+
+### Inventory Policies
+
+| Policy | Description | Behavior |
+|--------|-------------|----------|
+| `continue` | Allow backorders | Customers can order even if out of stock |
+| `deny` | Stop selling when out of stock | Hide or disable purchase button |
+| `track` | Track inventory only | Allow purchase but don't limit quantity |
+
+### Multi-Warehouse Inventory
+
+Track inventory across multiple locations:
+
+```json
+{
+  "id": "prod_abc123",
+  "inventory": {
+    "track_quantity": true,
+    "inventory_policy": "deny",
+    "locations": [
+      {
+        "location_id": "loc_nyc",
+        "location_name": "New York Warehouse",
+        "quantity": 50
+      },
+      {
+        "location_id": "loc_la",
+        "location_name": "Los Angeles Warehouse",
+        "quantity": 75
+      },
+      {
+        "location_id": "loc_uk",
+        "location_name": "UK Distribution Center",
+        "quantity": 25
+      }
+    ],
+    "total_quantity": 150
+  }
+}
+```
+
+### Low Stock Alerts
+
+Set up low stock notifications:
+
+```bash
+curl -X POST "https://api.zephyr.com/v1/webhooks" \
+  -H "Authorization: Bearer sk_live_abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com/webhooks/inventory",
+    "events": ["product.inventory_low", "product.inventory_out_of_stock"],
+    "secret": "whsec_abc123..."
+  }'
+```
+
+## Best Practices
+
+### 1. Pagination
+
+Use cursor-based pagination when syncing large catalogs:
+
+```bash
+curl -X GET "https://api.zephyr.com/v1/products?per_page=100&page=1" \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+```javascript
+// Recursive function to fetch all products
+async function fetchAllProducts(page = 1, products = []) {
+  const response = await fetch(
+    `https://api.zephyr.com/v1/products?per_page=100&page=${page}`,
+    {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    }
+  );
+
+  const data = await response.json();
+  products.push(...data.data);
+
+  if (data.meta.page < data.meta.total_pages) {
+    return fetchAllProducts(page + 1, products);
+  }
+
+  return products;
+}
+```
+
+### 2. Caching
+
+Cache product data aggressively to reduce API calls:
+
+```javascript
+// Cache products for 5 minutes
+const productCache = new Map();
+
+async function getProduct(productId) {
+  const cached = productCache.get(productId);
+
+  if (cached && Date.now() - cached.timestamp < 300000) {
+    return cached.data;
+  }
+
+  const response = await fetch(
+    `https://api.zephyr.com/v1/products/${productId}`,
+    {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    }
+  );
+
+  const data = await response.json();
+
+  productCache.set(productId, {
+    data,
+    timestamp: Date.now()
+  });
+
+  return data;
+}
+```
+
+<Callout type="info">
+  **Tip:** Product data changes infrequently (except for inventory). Cache product responses on your edge CDN to reduce latency. Only invalidate cache on product updates.
+</Callout>
+
+### 3. Webhooks for Synchronization
+
+Subscribe to product webhooks to keep your local database synchronized:
+
+```javascript
+// Handle product updates
+app.post('/webhooks/products', (req, res) => {
+  const event = req.headers['x-webhook-event'];
+
+  switch (event) {
+    case 'product.created':
+      handleProductCreated(req.body.data);
+      break;
+    case 'product.updated':
+      handleProductUpdated(req.body.data);
+      break;
+    case 'product.deleted':
+      handleProductDeleted(req.body.data);
+      break;
+    case 'product.inventory_low':
+      handleLowInventory(req.body.data);
+      break;
+  }
+
+  res.status(200).send('OK');
+});
+
+function handleProductUpdated(product) {
+  // Update local database
+  db.products.updateOne(
+    { id: product.id },
+    { $set: product },
+    { upsert: true }
+  );
+
+  // Invalidate cache
+  productCache.delete(product.id);
+}
+```
+
+### 4. Optimize Images
+
+Use our image optimization API for fast-loading images:
+
+```bash
+# Get optimized image
+https://cdn.zephyr.com/products/headphones-main.jpg?width=400&quality=80&format=webp
+```
+
+**Parameters:**
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `width` | Image width in pixels | `800` |
+| `height` | Image height in pixels | `600` |
+| `quality` | Image quality (1-100) | `80` |
+| `format` | Output format | `webp`, `jpeg`, `png` |
+| `fit` | Resize mode | `cover`, `contain`, `fill` |
+
+### 5. Use Search Effectively
+
+Use the search parameter for fast product lookups:
+
+```bash
+# Search by name
+curl -X GET "https://api.zephyr.com/v1/products?search=wireless+headphones"
+
+# Search by SKU
+curl -X GET "https://api.zephyr.com/v1/products?search=SH-2024-BLK"
+
+# Search by barcode
+curl -X GET "https://api.zephyr.com/v1/products?search=1234567890123"
+```
+
+### 6. Handle Variants Correctly
+
+Always display variant-specific information to customers:
+
+```javascript
+function displayProduct(product) {
+  if (product.variants.length > 0) {
+    // Product has variants - show variant selector
+    return (
+      <ProductVariantSelector
+        variants={product.variants}
+        onSelectVariant={(variant) => addToCart(variant)}
+      />
+    );
+  } else {
+    // Product has no variants - show product
+    return (
+      <ProductDisplay
+        product={product}
+        onAddToCart={() => addToCart(product)}
+      />
+    );
+  }
+}
+```
+
+### 7. Monitor Performance
+
+Track API performance and optimize accordingly:
+
+```javascript
+const startTime = Date.now();
+
+const response = await fetch(
+  `https://api.zephyr.com/v1/products?per_page=100`,
+  {
+    headers: { 'Authorization': `Bearer ${apiKey}` }
+  }
+);
+
+const duration = Date.now() - startTime;
+
+// Log performance metrics
+console.log(`Product fetch took ${duration}ms`);
+
+// Alert if slow
+if (duration > 1000) {
+  alert('API response slow - consider using caching');
+}
+```
+
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `product_not_found` | Product doesn't exist | Verify product ID |
+| `invalid_sku` | SKU already exists | Use unique SKU |
+| `invalid_price` | Invalid price value | Check price format |
+| `insufficient_inventory` | Not enough inventory | Update inventory or change policy |
+| `variant_required` | Product requires variants | Create at least one variant |
+
+**Example Error Response:**
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "message": "SKU already exists",
+    "code": "invalid_sku",
+    "details": {
+      "field": "sku",
+      "value": "SH-2024-BLK"
+    },
+    "request_id": "req_abc123xyz",
+    "timestamp": "2026-05-10T15:30:00Z"
+  }
+}
+```
+
+## Next Steps
+
+- [Orders API](/ecommerce/orders) - Process orders and fulfillments
+- [Inventory API](/ecommerce/inventory) - Advanced inventory management
+- [Shipping API](/ecommerce/shipping) - Configure shipping options
+- [Webhooks](/integrations/webhooks) - Real-time product updates
+- [Best Practices](/best-practices/performance) - Performance optimization
+
+## Need Help?
+
+- **API Reference:** Check our [Product API Reference](/api/ecommerce)
+- **Support:** Open a ticket in your [dashboard](https://dashboard.zephyr.com/support)
+- **Community:** Join our [Slack](https://zephyr.dev/slack)

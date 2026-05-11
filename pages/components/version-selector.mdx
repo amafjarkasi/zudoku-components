@@ -1,0 +1,195 @@
+---
+title: Version Selector
+description: API version dropdown selector
+---
+
+# Version Selector
+
+Switch between API versions.
+
+## Default Version Selector
+
+<div class="version-selector">
+  <button class="version-btn">
+    <span class="version-label">Version</span>
+    <span class="version-value">v2.0</span>
+    <span class="version-badge">Latest</span>
+    <span class="version-arrow">▼</span>
+  </button>
+  <div class="version-dropdown">
+    <a href="/api/v2" class="version-option version-option--active">
+      <span>v2.0</span>
+      <span class="version-badge">Latest</span>
+    </a>
+    <a href="/api/v1" class="version-option">
+      <span>v1.0</span>
+      <span class="version-tag">Deprecated</span>
+    </a>
+  </div>
+</div>
+
+## Inline Badge Style
+
+<div class="version-inline">
+  <span class="version-inline-label">API Version:</span>
+  <a href="/api/v2" class="version-inline-link version-inline-link--active">v2.0</a>
+  <a href="/api/v1" class="version-inline-link version-inline-link--deprecated">v1.0 (EOL Jul 2026)</a>
+</div>
+
+## With Changelog Link
+
+<div class="version-selector">
+  <button class="version-btn">
+    <span class="version-label">Version</span>
+    <span class="version-value">v2.0</span>
+    <span class="version-badge">Latest</span>
+    <span class="version-arrow">▼</span>
+  </button>
+  <div class="version-dropdown">
+    <a href="/api/v2" class="version-option version-option--active">
+      <span>v2.0</span>
+      <span class="version-badge">Latest</span>
+    </a>
+    <a href="/api/v1" class="version-option">
+      <span>v1.0</span>
+      <span class="version-tag">Deprecated</span>
+    </a>
+    <div class="version-divider"></div>
+    <a href="/changelog" class="version-option version-option--link">📋 View Changelog</a>
+  </div>
+</div>
+
+<style>{`
+  .version-selector {
+    position: relative;
+    display: inline-block;
+    margin: 1rem 0;
+  }
+
+  .version-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  .version-label {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+  }
+
+  .version-value {
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .version-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 1rem;
+  }
+
+  .version-arrow {
+    font-size: 0.6rem;
+    color: var(--muted-foreground);
+  }
+
+  .version-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.5rem;
+    min-width: 200px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.15);
+    display: none;
+    z-index: 100;
+  }
+
+  .version-selector:hover .version-dropdown {
+    display: block;
+  }
+
+  .version-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s ease;
+  }
+
+  .version-option:hover {
+    background: var(--accent);
+  }
+
+  .version-option--active {
+    background: var(--accent);
+  }
+
+  .version-option--link {
+    color: var(--primary);
+  }
+
+  .version-tag {
+    font-size: 0.7rem;
+    color: var(--muted-foreground);
+  }
+
+  .version-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.25rem 0;
+  }
+
+  .version-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--muted);
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    font-size: 0.85rem;
+  }
+
+  .version-inline-label {
+    color: var(--muted-foreground);
+  }
+
+  .version-inline-link {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    color: var(--muted-foreground);
+    transition: all 0.15s ease;
+  }
+
+  .version-inline-link:hover {
+    background: var(--accent);
+    color: var(--foreground);
+  }
+
+  .version-inline-link--active {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 500;
+  }
+
+  .version-inline-link--deprecated {
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+`}</style>

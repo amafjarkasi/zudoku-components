@@ -1,0 +1,50 @@
+openapi: 3.0.0
+info:
+  title: Syntara Analytics API
+  description: Track and query events, metrics, and dashboards.
+  version: 1.0.0
+servers:
+  - url: https://api.analytics.syntara.com/v1
+paths:
+  /events:
+    post:
+      summary: Track a new event
+      operationId: trackEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '202':
+          description: Event accepted
+  /metrics:
+    get:
+      summary: Query metrics
+      operationId: queryMetrics
+      parameters:
+        - name: metric_name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Metric data
+components:
+  schemas:
+    Event:
+      type: object
+      required:
+        - name
+        - timestamp
+      properties:
+        name:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        properties:
+          type: object
+          additionalProperties: true

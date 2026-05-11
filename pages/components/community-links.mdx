@@ -1,0 +1,178 @@
+---
+title: Community Links Banner
+description: Join our developer community
+---
+
+# Join Our Community
+
+Connect with other developers, get help, and stay updated.
+
+<div class="community-banner">
+  <div class="community-item community-item--discord">
+    <div class="community-icon">💬</div>
+    <div class="community-info">
+      <div class="community-title">Discord</div>
+      <div class="community-desc">Chat with developers</div>
+    </div>
+    <div class="community-badge">5.2K members</div>
+  </div>
+
+  <div class="community-item community-item--github">
+    <div class="community-icon">🐙</div>
+    <div class="community-info">
+      <div class="community-title">GitHub</div>
+      <div class="community-desc">Contribute & report issues</div>
+    </div>
+    <div class="community-badge community-badge--stars">⭐ 2.4K</div>
+  </div>
+
+  <div class="community-item community-item--twitter">
+    <div class="community-icon">𝕏</div>
+    <div class="community-info">
+      <div class="community-title">Twitter / X</div>
+      <div class="community-desc">Follow for updates</div>
+    </div>
+    <div class="community-badge">8.1K followers</div>
+  </div>
+</div>
+
+## Stay Updated
+
+<div class="update-links">
+  <div class="update-card">
+    <div class="update-icon">📣</div>
+    <div class="update-content">
+      <strong>Product Updates</strong>
+      <span>New features, deprecations, and releases</span>
+      <a href="/changelog" class="update-link">View Changelog →</a>
+    </div>
+  </div>
+
+  <div class="update-card">
+    <div class="update-icon">🐛</div>
+    <div class="update-content">
+      <strong>System Status</strong>
+      <span>API health and incident reports</span>
+      <a href="/status" class="update-link">Check Status →</a>
+    </div>
+  </div>
+
+  <div class="update-card">
+    <div class="update-icon">📰</div>
+    <div class="update-content">
+      <strong>Developer Blog</strong>
+      <span>Tutorials, best practices, and case studies</span>
+      <a href="https://blog.zu.com" class="update-link">Read Blog →</a>
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .community-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .community-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    transition: all 0.15s ease;
+  }
+
+  .community-item:hover {
+    transform: translateX(4px);
+    border-color: var(--primary);
+  }
+
+  .community-icon {
+    font-size: 1.75rem;
+  }
+
+  .community-info {
+    flex: 1;
+  }
+
+  .community-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .community-desc {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .community-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.6rem;
+    background: var(--muted);
+    border-radius: 1rem;
+    color: var(--muted-foreground);
+  }
+
+  .community-badge--stars {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .dark .community-badge--stars {
+    background: #92400e;
+    color: #fef3c7;
+  }
+
+  .update-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .update-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+  }
+
+  .update-icon {
+    font-size: 1.5rem;
+  }
+
+  .update-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .update-content strong {
+    font-size: 0.9rem;
+  }
+
+  .update-content span {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .update-link {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--primary);
+    margin-top: 0.25rem;
+    text-decoration: none;
+  }
+
+  .update-link:hover {
+    text-decoration: underline;
+  }
+`}</style>

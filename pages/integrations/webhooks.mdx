@@ -1,0 +1,217 @@
+---
+title: Webhooks Integration
+---
+
+
+Receive real-time notifications when events occur in your account. Webhooks eliminate polling and enable responsive integrations.
+
+## Webhook Events
+
+| Category | Events |
+|---|---|
+| Auth | `user.created`, `user.updated`, `user.deleted`, `token.revoked` |
+| E-Commerce | `order.created`, `order.paid`, `order.shipped`, `order.delivered`, `order.cancelled`, `refund.initiated` |
+| Inventory | `inventory.low_stock`, `inventory.out_of_stock`, `inventory.updated` |
+| Analytics | `goal.completed`, `experiment.variant_assigned` |
+
+## Setting Up Webhooks
+
+### Registering an Endpoint
+
+```bash
+curl -X POST https://api.example.com/v1/webhooks \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "url": "https://your-server.com/webhooks",
+    "events": ["order.created", "order.shipped", "order.delivered"],
+    "description": "Order notifications for fulfillment system",
+    "active": true
+  }'
+```
+
+### Webhook Response
+
+```json
+{
+  "webhook_id": "wh_abc123",
+  "url": "https://your-server.com/webhooks",
+  "events": ["order.created", "order.shipped", "order.delivered"],
+  "status": "active",
+  "created_at": "2026-05-10T14:00:00Z",
+  "secret": "whsec_abc123xyz789..."
+}
+```
+
+## Verifying Webhooks
+
+### Signature Verification
+
+Every webhook request includes a signature header. Always verify:
+
+```python
+import hmac
+import hashlib
+
+def verify_webhook(payload_body: bytes, signature: str, secret: str) -> bool:
+    expected_signature = hmac.new(
+        secret.encode('utf-8'),
+        payload_body,
+        hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(f"sha256={expected_signature}", signature)
+```
+
+```typescript
+const crypto = require('crypto');
+
+function verifyWebhook(payload: Buffer, signature: string, secret: string): boolean {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  const received = signature.replace('sha256=', '');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(received)
+  );
+}
+```
+
+<Callout type="info">
+  **Security:** Never process webhook payloads without verifying the signature. Failure to do so could allow attackers to inject fraudulent events.
+</Callout>
+
+## Webhook Payload Format
+
+### Order Created Event
+
+```json
+{
+  "id": "evt_xyz789",
+  "type": "order.created",
+  "api_version": "v1",
+  "created_at": "2026-05-10T15:42:00Z",
+  "data": {
+    "object": {
+      "id": "ord_abc123",
+      "status": "pending",
+      "customer_id": "cust_xyz",
+      "total": 231.08,
+      "currency": "USD",
+      "items": [...],
+      "shipping_address": {...}
+    }
+  }
+}
+```
+
+### Inventory Low Stock Event
+
+```json
+{
+  "id": "evt_inventory_001",
+  "type": "inventory.low_stock",
+  "created_at": "2026-05-10T14:35:00Z",
+  "data": {
+    "object": {
+      "variant_id": "var_sneaker_black_10",
+      "sku": "SNEAKERS-BLACK-10",
+      "quantity_available": 23,
+      "reorder_threshold": 50,
+      "warehouse": "west-coast-1"
+    }
+  }
+}
+```
+
+## Retry Policy
+
+Failed deliveries are retried with exponential backoff:
+
+| Attempt | Delay |
+|---|---|
+| 1st retry | 30 seconds |
+| 2nd retry | 5 minutes |
+| 3rd retry | 30 minutes |
+| 4th retry | 2 hours |
+| 5th retry | 8 hours |
+| Final retry | 24 hours |
+
+After 6 failures, the webhook is disabled and you'll receive an alert.
+
+### Response Requirements
+
+Your endpoint must:
+- Return HTTP 2xx within 30 seconds
+- Acknowledge receipt (don't process synchronously)
+
+For long-running processing, acknowledge immediately and queue for async handling:
+
+```python
+def webhook_handler(request):
+    # Acknowledge immediately
+    payload = json.loads(request.body)
+
+    # Queue for async processing
+    queue.enqueue(process_webhook, payload)
+
+    return {"status": "accepted"}, 202
+```
+
+## Testing Webhooks
+
+### Local Testing with CLI
+
+```bash
+premium-cli webhooks forward --url https://your-domain.com/webhooks
+
+premium-cli webhooks test --event order.created --webhook-id wh_abc123
+```
+
+### Test Mode
+
+Enable test mode to receive simulated events without affecting production:
+
+```bash
+curl -X PATCH https://api.example.com/v1/webhooks/wh_abc123 \
+  -d '{"test_mode": true}'
+```
+
+## Managing Webhooks
+
+### Listing Endpoints
+
+```bash
+curl https://api.example.com/v1/webhooks \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Updating
+
+```bash
+curl -X PATCH https://api.example.com/v1/webhooks/wh_abc123 \
+  -d '{"events": ["order.*", "refund.*"], "active": true}'
+```
+
+### Deleting
+
+```bash
+curl -X DELETE https://api.example.com/v1/webhooks/wh_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Webhook Logs
+
+View delivery history and debug failed attempts:
+
+```bash
+curl https://api.example.com/v1/webhooks/wh_abc123/logs \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Callout type="info">
+  **Log Retention:** Webhook logs are retained for 7 days. For longer retention, integrate with your logging system via our log drain feature.
+</Callout>

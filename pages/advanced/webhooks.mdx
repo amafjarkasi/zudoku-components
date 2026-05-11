@@ -1,0 +1,223 @@
+---
+title: Webhooks
+---
+
+
+Webhooks allow Zephyr to push real-time event notifications directly to your server — eliminating the need for polling and enabling truly reactive integrations.
+
+## How Webhooks Work
+
+<Mermaid chart={`
+flowchart LR
+    Zephyr[Zephyr Platform] -->|HTTP POST| Endpoint[Your Endpoint]
+    subgraph EventDelivery [Signed Payload]
+        direction LR
+        Payload[JSON Data]
+    end
+    Zephyr --- EventDelivery
+`} />
+
+When a subscribed event occurs (e.g., `order.shipped`), our system:
+1. Serializes the event payload as JSON
+2. Signs it with your webhook secret (HMAC-SHA256)
+3. Delivers an HTTP `POST` to your registered endpoint
+4. Retries up to **5 times** with exponential backoff on failure
+
+## Registering an Endpoint
+
+```bash
+curl -X POST https://api.zephyr.dev/v1/webhooks \
+  -H "Authorization: Bearer $ZEPHYR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://yourapp.com/webhooks/zephyr",
+    "events": ["order.created", "order.shipped", "order.refunded"],
+    "description": "Production order notification handler"
+  }'
+```
+
+```json
+{
+  "id": "wh_01HX2K4M9Q8NVRP3",
+  "url": "https://yourapp.com/webhooks/zephyr",
+  "secret": "whsec_7f2a91b3e4c5d6...",
+  "events": ["order.created", "order.shipped", "order.refunded"],
+  "status": "active",
+  "createdAt": "2024-05-10T12:00:00Z"
+}
+```
+
+<Callout type="info">
+  **Save your `secret` immediately.** It is shown only once at creation time. If you lose it, you must rotate it via the dashboard or API — all existing deliveries will fail signature verification until you update your endpoint handler.
+</Callout>
+
+## Event Payload Structure
+
+Every webhook delivery shares the same envelope structure:
+
+```json
+{
+  "id": "evt_01HX2K9P3RSTQMN7",
+  "type": "order.shipped",
+  "version": "2024-05-10",
+  "createdAt": "2024-05-10T14:32:00Z",
+  "data": {
+    "orderId": "ord_00X4FGHIJ",
+    "customerId": "cust_ABC123",
+    "trackingNumber": "1Z999AA10123456784",
+    "carrier": "UPS",
+    "estimatedDelivery": "2024-05-13T23:59:59Z",
+    "items": [
+      { "productId": "prod_XYZ", "quantity": 2, "name": "Wireless Headphones" }
+    ]
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | Globally unique event ID |
+| `type` | `string` | Event type (see below) |
+| `version` | `string` | API version at event creation |
+| `createdAt` | `string` | ISO 8601 timestamp |
+| `data` | `object` | Event-specific payload |
+
+## Verifying Signatures
+
+<Callout type="info">
+  **Always verify webhook signatures** before processing the payload. Skipping this step opens your endpoint to spoofed requests from malicious actors.
+</Callout>
+
+We sign every request with an `X-Zephyr-Signature` header using HMAC-SHA256:
+
+```
+X-Zephyr-Signature: sha256=3c4d5e6f7a8b9c0d...
+X-Zephyr-Timestamp: 1715342400
+```
+
+### Node.js Verification
+
+```typescript
+import crypto from "crypto";
+import express from "express";
+
+const app = express();
+
+app.post("/webhooks/zephyr", express.raw({ type: "application/json" }), (req, res) => {
+  const signature = req.headers["x-zephyr-signature"] as string;
+  const timestamp = req.headers["x-zephyr-timestamp"] as string;
+  const body = req.body; // raw Buffer
+
+  // Reject payloads older than 5 minutes (replay attack protection)
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - Number(timestamp)) > 300) {
+    return res.status(400).send("Timestamp too old");
+  }
+
+  const signedPayload = `${timestamp}.${body.toString()}`;
+  const expected = `sha256=${crypto
+    .createHmac("sha256", process.env.ZEPHYR_WEBHOOK_SECRET!)
+    .update(signedPayload)
+    .digest("hex")}`;
+
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return res.status(401).send("Invalid signature");
+  }
+
+  const event = JSON.parse(body.toString());
+  
+  // Handle the event
+  switch (event.type) {
+    case "order.shipped":
+      handleOrderShipped(event.data);
+      break;
+    case "order.refunded":
+      handleOrderRefunded(event.data);
+      break;
+  }
+
+  res.status(200).send("OK");
+});
+```
+
+### Python (FastAPI) Verification
+
+```python
+import hashlib
+import hmac
+import time
+import os
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+
+@app.post("/webhooks/zephyr")
+async def handle_webhook(request: Request):
+    body = await request.body()
+    signature = request.headers.get("x-zephyr-signature", "")
+    timestamp = request.headers.get("x-zephyr-timestamp", "0")
+
+    # Replay attack protection
+    if abs(time.time() - int(timestamp)) > 300:
+        raise HTTPException(status_code=400, detail="Timestamp too old")
+
+    signed_payload = f"{timestamp}.{body.decode()}"
+    expected = "sha256=" + hmac.new(
+        os.environ["ZEPHYR_WEBHOOK_SECRET"].encode(),
+        signed_payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(signature, expected):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    event = await request.json()
+    # Process event...
+    return {"status": "ok"}
+```
+
+## Available Event Types
+
+| Event | Trigger |
+|---|---|
+| `order.created` | A new order is placed |
+| `order.updated` | Any order field changes |
+| `order.shipped` | Tracking number assigned |
+| `order.delivered` | Carrier marks delivery confirmed |
+| `order.cancelled` | Order is cancelled |
+| `order.refunded` | Refund is issued |
+| `product.created` | New product added to catalog |
+| `product.updated` | Product details change |
+| `product.out_of_stock` | Inventory reaches 0 |
+| `user.created` | New user account registered |
+| `user.deleted` | Account deleted |
+| `payment.succeeded` | Charge captured successfully |
+| `payment.failed` | Charge attempt failed |
+
+## Delivery & Retries
+
+| Attempt | Delay |
+|---|---|
+| 1st (immediate) | 0 s |
+| 2nd | 30 s |
+| 3rd | 5 min |
+| 4th | 30 min |
+| 5th | 2 h |
+
+After 5 failed attempts, the event is marked as **dead-lettered**. You can replay dead-lettered events from the dashboard for up to **72 hours**.
+
+<Callout type="info">
+  Return `200 OK` as quickly as possible — ideally within 5 seconds. Offload heavy processing to a background queue (e.g., BullMQ, Celery) and acknowledge receipt immediately.
+</Callout>
+
+## Testing Webhooks Locally
+
+Use [ngrok](https://ngrok.com) or [localtunnel](https://github.com/localtunnel/localtunnel) to expose your local server, then register that URL as your webhook endpoint in the dashboard for testing.
+
+```bash
+ngrok http 3000
+
+https://abc123.ngrok.io/webhooks/zephyr
+```
+
+You can also trigger test events from the Zephyr dashboard under **Developers → Webhooks → Send Test Event**.

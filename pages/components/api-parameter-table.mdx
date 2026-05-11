@@ -1,0 +1,265 @@
+---
+title: API Parameter Table
+description: Reference table for API endpoint parameters
+---
+
+# API Parameter Table
+
+Reference tables for API endpoint parameters and schemas.
+
+## Path Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Unique identifier of the product |
+| `order_id` | string | Yes | Unique identifier of the order |
+| `customer_id` | string | No | Filter by customer ID |
+
+## Query Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `limit` | integer | No | `20` | Number of items to return (1-100) |
+| `offset` | integer | No | `0` | Pagination offset |
+| `sort` | string | No | `created_at` | Sort field |
+| `order` | string | No | `desc` | Sort order (`asc` or `desc`) |
+| `status` | string | No | — | Filter by status |
+| `created_after` | ISO 8601 | No | — | Filter by creation date |
+
+## Request Body
+
+<div class="param-table">
+  <div class="param-row param-row--header">
+    <div class="param-col param-col--name">Field</div>
+    <div class="param-col param-col--type">Type</div>
+    <div class="param-col param-col--required">Required</div>
+    <div class="param-col param-col--desc">Description</div>
+  </div>
+  <div class="param-row">
+    <div class="param-col param-col--name">
+      <code>name</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">string</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-required">Yes</span>
+    </div>
+    <div class="param-col param-col--desc">
+      Product name (max 255 characters)
+    </div>
+  </div>
+  <div class="param-row">
+    <div class="param-col param-col--name">
+      <code>price</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">integer</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-required">Yes</span>
+    </div>
+    <div class="param-col param-col--desc">
+      Price in cents (e.g., 2999 = $29.99)
+    </div>
+  </div>
+  <div class="param-row">
+    <div class="param-col param-col--name">
+      <code>currency</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">string</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-optional">No</span>
+    </div>
+    <div class="param-col param-col--desc">
+      ISO 4217 currency code (default: USD)
+    </div>
+  </div>
+  <div class="param-row">
+    <div class="param-col param-col--name">
+      <code>metadata</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">object</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-optional">No</span>
+    </div>
+    <div class="param-col param-col--desc">
+      Custom key-value metadata
+    </div>
+  </div>
+</div>
+
+## Nested Objects
+
+<div class="param-table">
+  <div class="param-row param-row--header">
+    <div class="param-col param-col--name">Field</div>
+    <div class="param-col param-col--type">Type</div>
+    <div class="param-col param-col--required">Required</div>
+    <div class="param-col param-col--desc">Description</div>
+  </div>
+  <div class="param-row param-row--nested-parent">
+    <div class="param-col param-col--name">
+      <code>address</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">object</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-required">Yes</span>
+    </div>
+    <div class="param-col param-col--desc">
+      Shipping address
+    </div>
+  </div>
+  <div class="param-row param-row--nested">
+    <div class="param-col param-col--name">
+      <code>address.street</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">string</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-required">Yes</span>
+    </div>
+    <div class="param-col param-col--desc">
+      Street address line 1
+    </div>
+  </div>
+  <div class="param-row param-row--nested">
+    <div class="param-col param-col--name">
+      <code>address.city</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">string</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-required">Yes</span>
+    </div>
+    <div class="param-col param-col--desc">
+      City name
+    </div>
+  </div>
+  <div class="param-row param-row--nested">
+    <div class="param-col param-col--name">
+      <code>address.postal_code</code>
+    </div>
+    <div class="param-col param-col--type">
+      <span class="param-type">string</span>
+    </div>
+    <div class="param-col param-col--required">
+      <span class="param-required">Yes</span>
+    </div>
+    <div class="param-col param-col--desc">
+      Postal/ZIP code
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .param-table {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 1.5rem 0;
+    font-size: 0.85rem;
+  }
+
+  .param-row {
+    display: grid;
+    grid-template-columns: 180px 100px 80px 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .param-row:last-child {
+    border-bottom: none;
+  }
+
+  .param-row--header {
+    background: var(--muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted-foreground);
+  }
+
+  .param-row--nested-parent {
+    background: var(--accent);
+  }
+
+  .param-row--nested {
+    background: var(--muted);
+    padding-left: 2rem;
+  }
+
+  .param-col--name code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    background: var(--muted);
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.25rem;
+  }
+
+  .param-type {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 0.25rem;
+  }
+
+  .dark .param-type {
+    background: #1e40af;
+    color: #dbeafe;
+  }
+
+  .param-required {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 0.25rem;
+  }
+
+  .dark .param-required {
+    background: #991b1b;
+    color: #fee2e2;
+  }
+
+  .param-optional {
+    font-size: 0.7rem;
+    color: var(--muted-foreground);
+  }
+
+  @media (max-width: 768px) {
+    .param-row {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+    }
+
+    .param-row--header {
+      display: none;
+    }
+
+    .param-col--name {
+      grid-column: 1 / -1;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .param-col--type,
+    .param-col--required {
+      padding: 0.25rem 0;
+    }
+  }
+`}</style>

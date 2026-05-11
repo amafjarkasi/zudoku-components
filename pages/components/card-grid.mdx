@@ -1,0 +1,213 @@
+---
+title: Card Grid
+description: Grid layout for cards and feature highlights
+---
+
+# Card Grid
+
+Responsive grid layouts for cards and content sections.
+
+## 2-Column Grid
+
+<div class="card-grid card-grid--2">
+  <div class="card">
+    <div class="card-icon">🔐</div>
+    <h3 class="card-title">Secure by Default</h3>
+    <p class="card-desc">All data encrypted at rest and in transit. SOC 2 Type II certified.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">⚡</div>
+    <h3 class="card-title">Lightning Fast</h3>
+    <p class="card-desc">Average response time under 100ms globally.</p>
+  </div>
+</div>
+
+## 3-Column Grid
+
+<div class="card-grid card-grid--3">
+  <div class="card">
+    <div class="card-icon">🛒</div>
+    <h3 class="card-title">E-Commerce</h3>
+    <p class="card-desc">Products, orders, inventory, and shipping in one API.</p>
+    <a href="/ecommerce/products" class="card-link">Explore →</a>
+  </div>
+  <div class="card">
+    <div class="card-icon">📊</div>
+    <h3 class="card-title">Analytics</h3>
+    <p class="card-desc">Track events, build funnels, understand users.</p>
+    <a href="/analytics/events" class="card-link">Explore →</a>
+  </div>
+  <div class="card">
+    <div class="card-icon">🔑</div>
+    <h3 class="card-title">Authentication</h3>
+    <p class="card-desc">OAuth2, API keys, and JWT support built in.</p>
+    <a href="/auth/getting-started" class="card-link">Explore →</a>
+  </div>
+</div>
+
+## 4-Column Grid
+
+<div class="card-grid card-grid--4">
+  <div class="stat-card">
+    <div class="stat-value">99.99%</div>
+    <div class="stat-label">Uptime</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">&lt;100ms</div>
+    <div class="stat-label">Response</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">50+</div>
+    <div class="stat-label">Regions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">24/7</div>
+    <div class="stat-label">Support</div>
+  </div>
+</div>
+
+## Feature Card with Image
+
+<div class="feature-card-grid">
+  <div class="feature-card">
+    <div class="feature-card-image">Dashboard Preview</div>
+    <div class="feature-card-content">
+      <h3>Real-Time Analytics</h3>
+      <p>Monitor your metrics in real-time with interactive dashboards and customizable reports.</p>
+      <a href="/analytics/events" class="card-link">Learn more →</a>
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .card-grid {
+    display: grid;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .card-grid--2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid--3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid--4 { grid-template-columns: repeat(4, 1fr); }
+
+  @media (max-width: 1024px) {
+    .card-grid--4 { grid-template-columns: repeat(2, 1fr); }
+    .card-grid--3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 640px) {
+    .card-grid--4,
+    .card-grid--3,
+    .card-grid--2 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    transition: all 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.15);
+    border-color: var(--primary);
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    line-height: 1.5;
+  }
+
+  .card-link {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .card-link:hover {
+    text-decoration: underline;
+  }
+
+  .stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .feature-card-grid {
+    margin: 1.5rem 0;
+  }
+
+  .feature-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--card);
+  }
+
+  @media (max-width: 768px) {
+    .feature-card {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .feature-card-image {
+    background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 500;
+  }
+
+  .feature-card-content {
+    padding: 2rem;
+  }
+
+  .feature-card-content h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .feature-card-content p {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+`}</style>

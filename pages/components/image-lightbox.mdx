@@ -1,0 +1,264 @@
+---
+title: Image Lightbox
+description: Expandable image with zoom capability
+---
+
+# Image Lightbox
+
+Click to expand images in a full-screen overlay.
+
+## Example
+
+<div class="lightbox-container">
+  <div class="lightbox-preview" onclick="this.nextElementSibling.style.display='flex'">
+    <div class="lightbox-placeholder">Dashboard Preview (Click to expand)</div>
+  </div>
+  <div class="lightbox-overlay" onclick="this.style.display='none'">
+    <div class="lightbox-content">
+      <div class="lightbox-image">Dashboard Preview - Full Size</div>
+      <button class="lightbox-close">×</button>
+      <button class="lightbox-nav lightbox-nav--prev">‹</button>
+      <button class="lightbox-nav lightbox-nav--next">›</button>
+    </div>
+  </div>
+</div>
+
+## Usage
+
+```html
+<div class="lightbox-container">
+  <div class="lightbox-preview" onclick="openLightbox(this)">
+    <img src="thumbnail.jpg" alt="Description" />
+  </div>
+  <div class="lightbox-overlay" onclick="closeLightbox(this)">
+    <div class="lightbox-content">
+      <img src="full-size.jpg" alt="Description" />
+      <button class="lightbox-close" onclick="closeLightbox(this)">×</button>
+    </div>
+  </div>
+</div>
+```
+
+## With Caption
+
+<div class="lightbox-container">
+  <div class="lightbox-preview lightbox-preview--with-caption" onclick="this.nextElementSibling.style.display='flex'">
+    <div class="lightbox-placeholder lightbox-placeholder--tall">API Reference Preview</div>
+    <div class="lightbox-caption">Figure 1: Interactive API explorer with auto-generated code snippets</div>
+  </div>
+  <div class="lightbox-overlay" onclick="this.style.display='none'">
+    <div class="lightbox-content">
+      <div class="lightbox-image">API Reference Preview - Full Size</div>
+      <div class="lightbox-caption">Figure 1: Interactive API explorer with auto-generated code snippets</div>
+      <button class="lightbox-close">×</button>
+    </div>
+  </div>
+</div>
+
+## Gallery Grid
+
+<div class="lightbox-gallery">
+  <div class="lightbox-gallery-item" onclick="this.querySelector('.lightbox-overlay').style.display='flex'">
+    <div class="lightbox-placeholder lightbox-placeholder--small">Image 1</div>
+    <div class="lightbox-overlay">
+      <div class="lightbox-content lightbox-content--small">Image 1 - Full</div>
+      <button class="lightbox-close">×</button>
+    </div>
+  </div>
+  <div class="lightbox-gallery-item" onclick="this.querySelector('.lightbox-overlay').style.display='flex'">
+    <div class="lightbox-placeholder lightbox-placeholder--small">Image 2</div>
+    <div class="lightbox-overlay">
+      <div class="lightbox-content lightbox-content--small">Image 2 - Full</div>
+      <button class="lightbox-close">×</button>
+    </div>
+  </div>
+  <div class="lightbox-gallery-item" onclick="this.querySelector('.lightbox-overlay').style.display='flex'">
+    <div class="lightbox-placeholder lightbox-placeholder--small">Image 3</div>
+    <div class="lightbox-overlay">
+      <div class="lightbox-content lightbox-content--small">Image 3 - Full</div>
+      <button class="lightbox-close">×</button>
+    </div>
+  </div>
+  <div class="lightbox-gallery-item" onclick="this.querySelector('.lightbox-overlay').style.display='flex'">
+    <div class="lightbox-placeholder lightbox-placeholder--small">Image 4</div>
+    <div class="lightbox-overlay">
+      <div class="lightbox-content lightbox-content--small">Image 4 - Full</div>
+      <button class="lightbox-close">×</button>
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .lightbox-container {
+    margin: 1.5rem 0;
+  }
+
+  .lightbox-preview {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .lightbox-preview:hover {
+    border-color: var(--primary);
+    box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.15);
+  }
+
+  .lightbox-preview--with-caption {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lightbox-placeholder {
+    background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .lightbox-placeholder--tall {
+    min-height: 300px;
+  }
+
+  .lightbox-placeholder--small {
+    min-height: 120px;
+  }
+
+  .lightbox-caption {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+
+  .lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    cursor: pointer;
+  }
+
+  .lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: var(--card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lightbox-content--small {
+    max-width: 60vw;
+  }
+
+  .lightbox-image {
+    background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+    color: white;
+    min-width: 600px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .lightbox-content--small .lightbox-image {
+    min-width: auto;
+    min-height: auto;
+    padding: 3rem;
+  }
+
+  .lightbox-content .lightbox-caption {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+
+  .lightbox-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 3rem;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox-nav:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .lightbox-nav--prev {
+    left: 1rem;
+  }
+
+  .lightbox-nav--next {
+    right: 1rem;
+  }
+
+  .lightbox-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 768px) {
+    .lightbox-gallery {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .lightbox-gallery-item {
+    cursor: pointer;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+`}</style>

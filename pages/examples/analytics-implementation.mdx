@@ -1,0 +1,794 @@
+---
+title: Analytics Implementation Guide
+description: Complete guide to implementing analytics tracking in your application
+---
+
+This guide covers implementing comprehensive analytics tracking for your e-commerce platform. Learn how to track user behavior, measure conversions, and gain insights into your business.
+
+## Analytics Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        User Journey                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌──────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐  │
+│  │  Visit   │───▶│   View     │───▶│    Add     │───▶│  Checkout  │  │
+│  │  Site    │    │  Product   │    │   to Cart  │    │   Start    │  │
+│  └──────────┘    └────────────┘    └────────────┘    └────────────┘  │
+│       │                                                            │
+│       │         ┌────────────┐    ┌────────────┐    ┌────────────┐  │
+│       └────────▶│  Search    │───▶│   Filter   │───▶│   Browse   │  │
+│                 │   Site     │    │  Results   │    │   Category │  │
+│                 └────────────┘    └────────────┘    └────────────┘  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────┐
+              │      Analytics Events          │
+              ├───────────────────────────────┤
+              │  page_view, product_viewed    │
+              │  add_to_cart, remove_from_cart│
+              │  checkout_started             │
+              │  purchase_completed           │
+              └───────────────────────────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────┐
+              │      Funnels & Metrics        │
+              ├───────────────────────────────┤
+              │  Conversion Rate             │
+              │  Average Order Value          │
+              │  Customer Lifetime Value      │
+              │  Retention & Churn           │
+              └───────────────────────────────┘
+```
+
+## Step 1: Initialize Analytics
+
+### JavaScript SDK Setup
+
+```javascript
+// src/analytics/client.js
+import { ZephyrAnalytics } from "@zephyr/analytics-sdk";
+
+const analytics = new ZephyrAnalytics({
+  apiKey: process.env.ZEPHYR_ANALYTICS_KEY,
+  // Batch configuration for performance
+  batch: {
+    enabled: true,
+    size: 20, // Flush after 20 events
+    flushInterval: 5000, // Or every 5 seconds
+  },
+  // Enable debug mode in development
+  debug: process.env.NODE_ENV === "development",
+  // Cookie settings for user identification
+  cookie: {
+    domain: ".your-domain.com",
+    name: "_zuid",
+    maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+  },
+});
+
+export default analytics;
+```
+
+### React Hook Integration
+
+```javascript
+// src/hooks/useAnalytics.js
+import { useEffect, useCallback } from "react";
+import analytics from "../analytics/client.js";
+
+/**
+ * React hook for analytics tracking
+ */
+export function useAnalytics() {
+  /**
+   * Track a page view
+   */
+  const trackPageView = useCallback((page) => {
+    analytics.track("page_view", {
+      page_name: page.name,
+      page_url: page.url,
+      page_category: page.category,
+      referrer: document.referrer,
+    });
+  }, []);
+
+  /**
+   * Track a product view
+   */
+  const trackProductView = useCallback((product) => {
+    analytics.track("product_viewed", {
+      product_id: product.id,
+      product_name: product.name,
+      product_category: product.categories?.[0],
+      product_price: product.pricing?.base_price,
+      currency: product.pricing?.currency,
+    });
+  }, []);
+
+  /**
+   * Track add to cart
+   */
+  const trackAddToCart = useCallback((product, variant, quantity) => {
+    analytics.track("product_added_to_cart", {
+      product_id: product.id,
+      variant_id: variant?.id,
+      product_name: product.name,
+      price: variant?.price || product.pricing?.base_price,
+      quantity,
+      cart_value: (variant?.price || product.pricing?.base_price) * quantity,
+    });
+  }, []);
+
+  /**
+   * Track purchase
+   */
+  const trackPurchase = useCallback((order) => {
+    analytics.track("purchase_completed", {
+      order_id: order.id,
+      revenue: order.pricing.grand_total,
+      tax: order.pricing.tax,
+      shipping: order.pricing.shipping,
+      discount: order.pricing.discount,
+      coupon_used: order.pricing.discount > 0 ? order.discount?.code : null,
+      payment_method: order.payment?.method,
+      items_count: order.line_items.length,
+    });
+
+    // Track each item individually
+    for (const item of order.line_items) {
+      analytics.track("item_purchased", {
+        order_id: order.id,
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total: item.total,
+      });
+    }
+  }, []);
+
+  return {
+    trackPageView,
+    trackProductView,
+    trackAddToCart,
+    trackPurchase,
+  };
+}
+```
+
+## Step 2: Track User Journey
+
+### Page Views
+
+```javascript
+// src/components/PageTracker.jsx
+import { useEffect } from "react";
+import { useAnalytics } from "../hooks/useAnalytics.js";
+import { useLocation } from "react-router-dom";
+
+/**
+ * Component that automatically tracks page views
+ */
+export function PageTracker() {
+  const location = useLocation();
+  const { trackPageView } = useAnalytics();
+
+  useEffect(() => {
+    // Extract page info from route
+    const pageInfo = getPageInfo(location.pathname);
+
+    // Track the page view
+    trackPageView(pageInfo);
+
+    // Update document title
+    document.title = pageInfo.title;
+  }, [location.pathname]);
+
+  return null;
+}
+
+function getPageInfo(pathname) {
+  const routes = {
+    "/": { name: "Home", category: "main" },
+    "/products": { name: "Product Listing", category: "catalog" },
+    "/products/*": { name: "Product Detail", category: "catalog" },
+    "/cart": { name: "Shopping Cart", category: "checkout" },
+    "/checkout": { name: "Checkout", category: "checkout" },
+    "/orders": { name: "Order History", category: "account" },
+  };
+
+  // Match route patterns
+  for (const [pattern, info] of Object.entries(routes)) {
+    if (matchRoute(pattern, pathname)) {
+      return {
+        ...info,
+        url: window.location.href,
+        title: `${info.name} | Your Store`,
+      };
+    }
+  }
+
+  return {
+    name: "Unknown",
+    category: "other",
+    url: window.location.href,
+    title: document.title,
+  };
+}
+```
+
+### Product Interactions
+
+```javascript
+// src/components/ProductCard.jsx
+
+function ProductCard({ product }) {
+  const { trackProductView, trackAddToCart } = useAnalytics();
+
+  function handleViewDetails() {
+    // Track product view when opening detail modal
+    trackProductView(product);
+  }
+
+  async function handleAddToCart() {
+    // Track add to cart with selected variant
+    const variant = product.variants[0]; // Default variant
+
+    await addToCart(variant);
+    trackAddToCart(product, variant, 1);
+  }
+
+  return (
+    <div className="product-card">
+      <img src={product.media?.images?.[0]?.url} alt={product.name} />
+
+      <h3>{product.name}</h3>
+      <p>{formatCurrency(product.pricing.base_price)}</p>
+
+      <button onClick={handleViewDetails}>View Details</button>
+      <button onClick={handleAddToCart}>Add to Cart</button>
+    </div>
+  );
+}
+```
+
+### Search Tracking
+
+```javascript
+// src/components/SearchBar.jsx
+
+function SearchBar() {
+  const [query, setQuery] = useState("");
+  const { trackSearch } = useAnalytics();
+
+  async function handleSearch(e) {
+    e.preventDefault();
+
+    const results = await performSearch(query);
+
+    // Track search with results count
+    analytics.track("search_performed", {
+      search_term: query,
+      results_count: results.length,
+      filters_applied: getActiveFilters(),
+    });
+
+    // Track if no results
+    if (results.length === 0) {
+      analytics.track("search_no_results", {
+        search_term: query,
+      });
+    }
+  }
+
+  function handleFilterChange(filterName, value) {
+    // Track filter usage
+    analytics.track("filter_applied", {
+      filter_name: filterName,
+      filter_value: value,
+    });
+  }
+
+  return (
+    <form onSubmit={handleSearch}>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search products..."
+      />
+      <button type="submit">Search</button>
+    </form>
+  );
+}
+```
+
+## Step 3: E-Commerce Funnels
+
+### Define Your Funnels
+
+```javascript
+// src/analytics/funnels.js
+
+/**
+ * Standard e-commerce funnel
+ */
+const ecommerceFunnel = {
+  name: "Purchase Funnel",
+  steps: [
+    { event: "page_view", label: "Visited Site", conditions: {} },
+    { event: "product_viewed", label: "Viewed Product", conditions: {} },
+    { event: "product_added_to_cart", label: "Added to Cart", conditions: {} },
+    { event: "checkout_started", label: "Started Checkout", conditions: {} },
+    {
+      event: "purchase_completed",
+      label: "Completed Purchase",
+      conditions: {},
+    },
+  ],
+};
+
+/**
+ * Checkout abandonment funnel
+ */
+const checkoutAbandonmentFunnel = {
+  name: "Checkout Abandonment",
+  steps: [
+    { event: "checkout_started", label: "Started Checkout", conditions: {} },
+    {
+      event: "purchase_completed",
+      label: "Completed Purchase",
+      conditions: {},
+    },
+  ],
+};
+
+/**
+ * Registration funnel
+ */
+const registrationFunnel = {
+  name: "User Registration",
+  steps: [
+    {
+      event: "page_view",
+      label: "Visited Site",
+      conditions: { page: "/signup" },
+    },
+    { event: "user_signed_up", label: "Signed Up", conditions: {} },
+    { event: "first_purchase", label: "First Purchase", conditions: {} },
+  ],
+};
+
+/**
+ * Query funnel results
+ */
+async function analyzeFunnel(funnel, dateRange) {
+  const result = await analytics.query({
+    funnel: {
+      steps: funnel.steps.map((step) => ({
+        event: step.event,
+        ...step.conditions,
+      })),
+    },
+    date_range: dateRange,
+    breakdown: "device_type", // Optional breakdown
+  });
+
+  return {
+    funnel,
+    results: result.steps.map((step, index) => ({
+      ...funnel.steps[index],
+      users: step.users,
+      conversion_from_previous:
+        (step.users / (result.steps[index - 1]?.users || step.users)) * 100,
+      conversion_from_first: (step.users / result.steps[0].users) * 100,
+    })),
+    overall_conversion:
+      (result.steps[result.steps.length - 1].users / result.steps[0].users) *
+      100,
+  };
+}
+```
+
+### Funnel Analysis Component
+
+```javascript
+// src/components/FunnelAnalysis.jsx
+
+function FunnelAnalysis({ funnel }) {
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState("last_30_days");
+
+  useEffect(() => {
+    loadFunnelData();
+  }, [dateRange]);
+
+  async function loadFunnelData() {
+    setLoading(true);
+
+    const result = await analyzeFunnel(funnel, getDateRange(dateRange));
+
+    setResults(result);
+    setLoading(false);
+  }
+
+  if (loading) {
+    return <FunnelSkeleton />;
+  }
+
+  return (
+    <div className="funnel-analysis">
+      <h3>{funnel.name}</h3>
+
+      <div className="funnel-visualization">
+        {results.results.map((step, index) => (
+          <FunnelStep
+            key={index}
+            step={step}
+            previousStep={results.results[index - 1]}
+            isLast={index === results.results.length - 1}
+          />
+        ))}
+      </div>
+
+      <div className="funnel-summary">
+        <div className="metric">
+          <span className="label">Overall Conversion</span>
+          <span className="value">
+            {results.overall_conversion.toFixed(2)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FunnelStep({ step, previousStep, isLast }) {
+  const widthPercent = step.conversion_from_first;
+  const dropOffPercent = previousStep ? 100 - step.conversion_from_previous : 0;
+
+  return (
+    <div className="funnel-step">
+      <div className="funnel-bar" style={{ width: `${widthPercent}%` }}>
+        <span className="step-label">{step.label}</span>
+        <span className="step-users">{step.users.toLocaleString()}</span>
+        <span className="step-percent">
+          {step.conversion_from_first.toFixed(1)}%
+        </span>
+      </div>
+
+      {!isLast && dropOffPercent > 0 && (
+        <div className="drop-off">
+          <span>-{dropOffPercent.toFixed(1)}% dropped off</span>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Step 4: Custom Metrics
+
+### Define Custom Metrics
+
+```javascript
+// src/analytics/metrics.js
+
+/**
+ * Calculate Average Order Value (AOV)
+ */
+async function calculateAOV(dateRange) {
+  const result = await analytics.query({
+    metric: "revenue",
+    dimensions: ["date"],
+    filters: {
+      date_range: dateRange,
+    },
+  });
+
+  const totalRevenue = result.data.reduce((sum, d) => sum + d.revenue, 0);
+  const orderCount = await getOrderCount(dateRange);
+
+  return {
+    aov: totalRevenue / orderCount,
+    totalRevenue,
+    orderCount,
+    dateRange,
+  };
+}
+
+/**
+ * Calculate Customer Lifetime Value (CLV)
+ */
+async function calculateCLV(dateRange) {
+  const result = await analytics.query({
+    metric: "revenue",
+    dimensions: ["customer_id"],
+    filters: {
+      date_range: dateRange,
+    },
+  });
+
+  // Group by customer and calculate LTV
+  const customerValues = {};
+
+  for (const row of result.data) {
+    if (!customerValues[row.customer_id]) {
+      customerValues[row.customer_id] = {
+        revenue: 0,
+        orders: 0,
+        firstOrder: row.date,
+        lastOrder: row.date,
+      };
+    }
+
+    customerValues[row.customer_id].revenue += row.revenue;
+    customerValues[row.customer_id].orders++;
+    customerValues[row.customer_id].lastOrder = row.date;
+  }
+
+  // Calculate average CLV
+  const customers = Object.values(customerValues);
+  const avgCLV =
+    customers.reduce((sum, c) => sum + c.revenue, 0) / customers.length;
+
+  return {
+    avgCLV,
+    totalCustomers: customers.length,
+    medianCLV: calculateMedian(customers.map((c) => c.revenue)),
+    topCustomers: customers.sort((a, b) => b.revenue - a.revenue).slice(0, 10),
+  };
+}
+
+/**
+ * Product Performance Metrics
+ */
+async function getProductPerformance(dateRange, limit = 10) {
+  const result = await analytics.query({
+    events: ["product_viewed", "product_added_to_cart", "purchase_completed"],
+    dimensions: ["product_id", "event_name"],
+    filters: {
+      date_range: dateRange,
+    },
+  });
+
+  // Pivot and calculate metrics
+  const productMetrics = {};
+
+  for (const row of result.data) {
+    const { product_id, event_name, count, revenue } = row;
+
+    if (!productMetrics[product_id]) {
+      productMetrics[product_id] = {
+        product_id,
+        views: 0,
+        addToCarts: 0,
+        purchases: 0,
+        revenue: 0,
+      };
+    }
+
+    switch (event_name) {
+      case "product_viewed":
+        productMetrics[product_id].views = count;
+        break;
+      case "product_added_to_cart":
+        productMetrics[product_id].addToCarts = count;
+        break;
+      case "purchase_completed":
+        productMetrics[product_id].purchases = count;
+        productMetrics[product_id].revenue = revenue;
+        break;
+    }
+  }
+
+  // Calculate conversion rates
+  return Object.values(productMetrics)
+    .map((p) => ({
+      ...p,
+      viewToCartRate: p.views > 0 ? (p.addToCarts / p.views) * 100 : 0,
+      viewToPurchaseRate: p.views > 0 ? (p.purchases / p.views) * 100 : 0,
+      cartToPurchaseRate:
+        p.addToCarts > 0 ? (p.purchases / p.addToCarts) * 100 : 0,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+}
+
+/**
+ * Cohort Retention Analysis
+ */
+async function calculateCohortRetention(
+  cohortDateRange,
+  retentionPeriods = [0, 7, 14, 30, 60, 90],
+) {
+  const customers = await getNewCustomers(cohortDateRange);
+
+  const retention = {};
+
+  for (const period of retentionPeriods) {
+    const periodStart = addDays(cohortDateRange.start, period);
+    const periodEnd = addDays(periodStart, period);
+
+    // Count customers who made a purchase in this period
+    const returningCustomers = await countPurchasesInRange(
+      customers.map((c) => c.id),
+      periodStart,
+      periodEnd,
+    );
+
+    retention[`day_${period}`] = {
+      date: periodStart,
+      customers: customers.length,
+      returning: returningCustomers,
+      rate: (returningCustomers / customers.length) * 100,
+    };
+  }
+
+  return {
+    cohort: cohortDateRange,
+    retention,
+  };
+}
+```
+
+## Step 5: Real-time Dashboards
+
+### Real-time Event Stream
+
+```javascript
+// src/dashboards/RealTimeDashboard.jsx
+
+function RealTimeDashboard() {
+  const [metrics, setMetrics] = useState({
+    activeUsers: 0,
+    pageViews: 0,
+    conversions: 0,
+    revenue: 0,
+  });
+  const [recentEvents, setRecentEvents] = useState([]);
+
+  useEffect(() => {
+    // Subscribe to real-time analytics stream
+    const subscription = analytics.subscribe({
+      events: ["page_view", "product_viewed", "purchase_completed"],
+      callback: (event) => {
+        updateMetrics(event);
+        addRecentEvent(event);
+      },
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  function updateMetrics(event) {
+    setMetrics((prev) => {
+      const newMetrics = { ...prev };
+
+      switch (event.type) {
+        case "page_view":
+          newMetrics.activeUsers = Math.min(
+            prev.activeUsers + 1,
+            getActiveUsersEstimate(),
+          );
+          newMetrics.pageViews++;
+          break;
+        case "purchase_completed":
+          newMetrics.conversions++;
+          newMetrics.revenue += event.properties.revenue;
+          break;
+      }
+
+      return newMetrics;
+    });
+  }
+
+  function addRecentEvent(event) {
+    setRecentEvents((prev) => [
+      {
+        ...event,
+        timestamp: new Date().toISOString(),
+      },
+      ...prev.slice(0, 99), // Keep last 100 events
+    ]);
+  }
+
+  return (
+    <div className="realtime-dashboard">
+      <MetricsGrid metrics={metrics} />
+      <EventStream events={recentEvents} />
+    </div>
+  );
+}
+```
+
+## Step 6: Privacy and Consent
+
+### Consent Management
+
+```javascript
+// src/analytics/consent.js
+
+class ConsentManager {
+  constructor() {
+    this.consent = this.loadConsent();
+  }
+
+  loadConsent() {
+    const stored = localStorage.getItem("analytics_consent");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      analytics: false,
+      marketing: false,
+      functional: false,
+    };
+  }
+
+  saveConsent(consent) {
+    this.consent = consent;
+    localStorage.setItem("analytics_consent", JSON.stringify(consent));
+    this.applyConsent();
+  }
+
+  applyConsent() {
+    if (!this.consent.analytics) {
+      // Disable analytics tracking
+      analytics.disable();
+    } else {
+      analytics.enable();
+
+      // Respect marketing consent
+      if (!this.consent.marketing) {
+        analytics.setConfig({ marketingTracking: false });
+      }
+    }
+  }
+
+  hasConsent(type) {
+    return this.consent[type] === true;
+  }
+}
+
+export const consentManager = new ConsentManager();
+
+// Integration with tracking
+function trackWithConsent(event, properties) {
+  if (consentManager.hasConsent("analytics")) {
+    analytics.track(event, properties);
+  }
+}
+```
+
+<Callout type="warning">
+  **Privacy Compliance:** Ensure your analytics implementation complies with
+  GDPR, CCPA, and other privacy regulations. Always obtain user consent before
+  tracking personal data, provide clear privacy policies, and offer opt-out
+  mechanisms.
+</Callout>
+
+## Analytics Best Practices
+
+<Callout type="tip">**Tracking Best Practices:**</Callout>
+
+1. **Track the entire user journey** - From landing to conversion
+2. **Use consistent event naming** - Establish naming conventions
+3. **Include contextual data** - Product IDs, prices, user segments
+4. **Implement server-side tracking** - For critical events like purchases
+5. **Test your tracking** - Verify events fire correctly in development
+6. **Monitor data quality** - Check for missing or duplicate events
+7. **Respect user privacy** - Get consent, anonymize where possible
+
+## Next Steps
+
+- [E-Commerce Full Flow](/examples/ecommerce-full-flow) - Complete e-commerce integration
+- [First Integration Tutorial](/tutorials/first-integration) - Get started with the API
+- [Webhook Handler Tutorial](/tutorials/webhook-handler) - Process real-time events
+- [Best Practices - Performance](/best-practices/performance) - Optimize analytics performance

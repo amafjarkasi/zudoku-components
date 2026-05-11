@@ -1,0 +1,177 @@
+---
+title: Integration Showcase
+description: Browse available integrations and partner services
+---
+
+# Integrations
+
+Connect with your favorite tools and services. Zu integrates seamlessly with leading platforms.
+
+## Authentication Providers
+
+<div class="integration-grid">
+  <div class="integration-card">
+    <div class="integration-logo">Clerk</div>
+    <div class="integration-name">Clerk</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Firebase</div>
+    <div class="integration-name">Firebase Auth</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Supabase</div>
+    <div class="integration-name">Supabase Auth</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Auth0</div>
+    <div class="integration-name">Auth0</div>
+    <div class="integration-status integration-status--coming">Coming Soon</div>
+  </div>
+</div>
+
+## Payment Providers
+
+<div class="integration-grid">
+  <div class="integration-card">
+    <div class="integration-logo">Stripe</div>
+    <div class="integration-name">Stripe Payments</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Paddle</div>
+    <div class="integration-name">Paddle</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Braintree</div>
+    <div class="integration-name">Braintree</div>
+    <div class="integration-status integration-status--coming">Coming Soon</div>
+  </div>
+</div>
+
+## Analytics & Monitoring
+
+<div class="integration-grid">
+  <div class="integration-card">
+    <div class="integration-logo">Segment</div>
+    <div class="integration-name">Segment</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Mixpanel</div>
+    <div class="integration-name">Mixpanel</div>
+    <div class="integration-status integration-status--supported">Supported</div>
+  </div>
+  <div class="integration-card">
+    <div class="integration-logo">Amplitude</div>
+    <div class="integration-name">Amplitude</div>
+    <div class="integration-status integration-status--coming">Coming Soon</div>
+  </div>
+</div>
+
+## Need a Custom Integration?
+
+<a href="/integrations/webhooks" class="integration-cta">
+  <div class="integration-cta-content">
+    <strong>Build Your Own</strong>
+    <span>Use webhooks and our API to create custom integrations</span>
+  </div>
+  <div class="integration-cta-arrow">→</div>
+</a>
+
+<style>{`
+  .integration-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .integration-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    text-align: center;
+  }
+
+  .integration-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--foreground);
+  }
+
+  .integration-name {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.75rem;
+  }
+
+  .integration-status {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+  }
+
+  .integration-status--supported {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .dark .integration-status--supported {
+    background: #166534;
+    color: #dcfce7;
+  }
+
+  .integration-status--coming {
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .integration-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--muted);
+    text-decoration: none;
+    color: inherit;
+    margin-top: 1.5rem;
+    transition: all 0.15s ease;
+  }
+
+  .integration-cta:hover {
+    border-color: var(--primary);
+    background: var(--accent);
+  }
+
+  .integration-cta-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .integration-cta-content strong {
+    color: var(--foreground);
+  }
+
+  .integration-cta-content span {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  .integration-cta-arrow {
+    font-size: 1.25rem;
+    color: var(--primary);
+  }
+`}</style>

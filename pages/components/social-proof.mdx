@@ -1,0 +1,257 @@
+---
+title: Social Proof
+description: Customer logos and usage metrics
+---
+
+# Trusted by Developers
+
+Join thousands of companies building with the Zu API.
+
+## Usage Metrics
+
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-value">2.4M+</div>
+    <div class="metric-label">API calls per day</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value">99.99%</div>
+    <div class="metric-label">Uptime SLA</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value">50K+</div>
+    <div class="metric-label">Developers</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value">8K+</div>
+    <div class="metric-label">Companies</div>
+  </div>
+</div>
+
+## Customer Logos
+
+<div class="logo-grid">
+  <div class="logo-item">Acme Corp</div>
+  <div class="logo-item">Globex</div>
+  <div class="logo-item">Initech</div>
+  <div class="logo-item">Umbrella</div>
+  <div class="logo-item">Stark Ind</div>
+  <div class="logo-item">Wayne Ent</div>
+  <div class="logo-item">Cyberdyne</div>
+  <div class="logo-item">Soylent</div>
+</div>
+
+## Testimonials
+
+<div class="testimonial-grid">
+  <div class="testimonial-card">
+    <div class="testimonial-content">
+      "Zu's API cut our checkout integration time from 2 weeks to 2 days. The documentation is exceptional."
+    </div>
+    <div class="testimonial-author">
+      <div class="testimonial-avatar">JD</div>
+      <div class="testimonial-info">
+        <div class="testimonial-name">John Doe</div>
+        <div class="testimonial-role">CTO at TechStartup</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="testimonial-card">
+    <div class="testimonial-content">
+      "We migrated from Stripe to Zu and couldn't be happier. The webhook reliability alone was worth it."
+    </div>
+    <div class="testimonial-author">
+      <div class="testimonial-avatar">SM</div>
+      <div class="testimonial-info">
+        <div class="testimonial-name">Sarah Miller</div>
+        <div class="testimonial-role">Engineering Lead at ECommCo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="testimonial-card">
+    <div class="testimonial-content">
+      "The analytics integration took 30 minutes. We were tracking events same-day."
+    </div>
+    <div class="testimonial-author">
+      <div class="testimonial-avatar">MK</div>
+      <div class="testimonial-info">
+        <div class="testimonial-name">Mike Kim</div>
+        <div class="testimonial-role">Product Manager at DataCo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+## Integration Badges
+
+<div class="badge-row">
+  <div class="integration-badge">
+    <span class="integration-badge-icon">✓</span>
+    <span>SOC 2 Type II</span>
+  </div>
+  <div class="integration-badge">
+    <span class="integration-badge-icon">✓</span>
+    <span>GDPR Compliant</span>
+  </div>
+  <div class="integration-badge">
+    <span class="integration-badge-icon">✓</span>
+    <span>HIPAA Ready</span>
+  </div>
+  <div class="integration-badge">
+    <span class="integration-badge-icon">✓</span>
+    <span>PCI DSS</span>
+  </div>
+</div>
+
+<style>{`
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+
+  .metric-card {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: var(--font-mono);
+  }
+
+  .metric-label {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin-top: 0.25rem;
+  }
+
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+
+  .logo-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+
+  .logo-item:hover {
+    border-color: var(--primary);
+    color: var(--foreground);
+  }
+
+  .testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .testimonial-card {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+  }
+
+  .testimonial-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--foreground);
+    margin-bottom: 1.25rem;
+    font-style: italic;
+  }
+
+  .testimonial-content::before {
+    content: '"';
+    font-size: 2rem;
+    color: var(--primary);
+    line-height: 0;
+    vertical-align: -0.5rem;
+    margin-right: 0.25rem;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .testimonial-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+
+  .testimonial-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .testimonial-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  .testimonial-role {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 2rem 0;
+  }
+
+  .integration-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .dark .integration-badge {
+    background: #166534;
+    color: #dcfce7;
+  }
+
+  .integration-badge-icon {
+    font-size: 0.875rem;
+  }
+`}</style>

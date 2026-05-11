@@ -1,0 +1,252 @@
+---
+title: Analytics Integration
+---
+
+
+Connect your existing analytics tools with our platform for unified reporting and advanced attribution.
+
+## Integration Overview
+
+| Platform | Status | Features |
+|---|---|---|
+| Segment | Available | Events, Identify, Destinations |
+| Mixpanel | Available | Events, People, Funnels |
+| Amplitude | Available | Events, Cohorts, Retention |
+| Google Analytics 4 | Available | Events, Conversions, Audiences |
+| Meta Ads | Available | Events, Audiences, Optimization |
+| Google Ads | Available | Conversions, Audiences |
+
+## Segment Integration
+
+### Installing Segment
+
+```bash
+npm install @segment/analytics-node
+```
+
+### Configuration
+
+```typescript
+import { Analytics } from '@segment/analytics-node';
+import { PremiumDestination } from '@premium-api/segment-destination';
+
+const analytics = new Analytics({
+  writeKey: 'SEGMENT_WRITE_KEY'
+});
+
+// Add our destination
+analytics.add({
+  name: 'Zephyr',
+  version: '1.0.0',
+  destination: PremiumDestination({
+    apiKey: process.env.PREMIUM_API_KEY
+  })
+});
+```
+
+### Sending Events
+
+```typescript
+// Track page views
+analytics.page({ name: 'Product Page', properties: { product_id: '123' }});
+
+// Track user actions
+analytics.track({ event: 'Add to Cart', properties: { sku: 'ABC', price: 29.99 }});
+
+// Identify users
+analytics.identify({ userId: 'usr_123', traits: { email: 'user@example.com' }});
+```
+
+### Bi-directional Sync
+
+Sync Segment audiences to our platform:
+
+```python
+client.integrations.segment.sync_audiences({
+    'segment_workspace': 'your-workspace',
+    'source_id': 'src_xxx',
+    'sync_mode': 'incremental'
+})
+```
+
+## Mixpanel Integration
+
+### Importing Mixpanel Cohorts
+
+```typescript
+const cohorts = await mixpanel.client.cohorts.list();
+
+for (const cohort of cohorts) {
+    const users = await mixpanel.client.cohorts.getUsers(cohort.id);
+
+    await client.analytics.create_segment({
+        name: `Mixpanel: ${cohort.name}`,
+        rules: [{ field: 'user_id', operator: 'in', value: users }],
+        source: 'mixpanel',
+        source_id: cohort.id
+    });
+}
+```
+
+## Google Analytics 4 Integration
+
+### Enhanced Conversions
+
+Enable enhanced conversions for better tracking:
+
+```typescript
+client.integrations.ga4.enableEnhancedConversions({
+    measurement_id: 'G-XXXXXXXXXX',
+    conversion_mode: 'google_ads'
+});
+```
+
+### Conversion Tracking
+
+```python
+client.integrations.ga4.track_conversion({
+    conversion_name: 'purchase',
+    event_data: {
+        'transaction_id': 'ord_abc123',
+        'value': 231.08,
+        'currency': 'USD'
+    }
+});
+```
+
+## Attribution Integration
+
+### Multi-touch Attribution
+
+```python
+attribution = client.analytics.attribution({
+    model: 'data_driven',
+    conversion_event: 'purchase_completed',
+    touchpoints: [
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'referral'
+    ],
+    lookback_window: 30,  # days
+    conversion_window: 7   # days
+})
+```
+
+### View Attribution Reports
+
+```python
+report = client.analytics.attribution_report({
+    dimensions: ['channel', 'campaign'],
+    metrics: ['conversions', 'revenue', 'cost'],
+    date_range: {'start': '2026-04-01', 'end': '2026-04-30'}
+})
+```
+
+<Callout type="info">
+  **Privacy-compliant Attribution:** All attribution is performed using first-party data. We do not use cross-site tracking or third-party cookies.
+</Callout>
+
+## Custom Integrations
+
+### Building Custom Destinations
+
+```typescript
+import { DestinationPlugin } from '@premium-api/sdk';
+
+export const myDestination: DestinationPlugin = {
+  name: 'my-destination',
+
+  async track(event: AnalyticsEvent) {
+    // Send to your endpoint
+    await fetch('https://your-analytics.com/collect', {
+      method: 'POST',
+      body: JSON.stringify(event)
+    });
+  },
+
+  async identify(user: User) {
+    // Sync user to your platform
+    await yourApi.syncUser(user);
+  }
+};
+```
+
+### Event Mapping
+
+```typescript
+const mapper = client.integrations.createMapper({
+    'page_view': 'screen_view',
+    'purchase_completed': 'ecommerce.purchase',
+    'add_to_cart': 'ecommerce.add_to_cart'
+});
+```
+
+## Data Warehouse Integration
+
+### Export to Snowflake
+
+```python
+client.analytics.export_to_warehouse({
+    destination: 'snowflake',
+    connection_string: 'your-snowflake-conn',
+    schema: 'premium_analytics',
+    tables: ['events', 'users', 'orders'],
+    schedule: 'daily'
+})
+```
+
+### Export to BigQuery
+
+```python
+client.analytics.export_to_warehouse({
+    destination: 'bigquery',
+    project_id: 'your-project',
+    dataset: 'premium_analytics',
+    tables: ['events', 'users', 'orders']
+})
+```
+
+### Export to Redshift
+
+```python
+client.analytics.export_to_warehouse({
+    destination: 'redshift',
+    host: 'your-cluster.xxx.region.redshift.amazonaws.com',
+    database: 'analytics',
+    schema: 'premium',
+    tables: ['events', 'users', 'orders']
+})
+```
+
+## Real-time Streaming
+
+### Kafka Integration
+
+Stream events to your Kafka cluster:
+
+```python
+client.integrations.streaming.connect({
+    provider: 'kafka',
+    brokers: ['kafka1:9092', 'kafka2:9092'],
+    topic: 'premium-events',
+    compression: 'snappy',
+    batch_size: 1000
+})
+```
+
+### AWS Kinesis
+
+```python
+client.integrations.streaming.connect({
+    provider: 'kinesis',
+    region: 'us-west-2',
+    stream_name: 'premium-analytics',
+    aws_access_key_id: 'xxx',
+    aws_secret_access_key: 'xxx'
+})
+```
+
+<Callout type="info">
+  **Data Retention:** Events sent to external streaming platforms are not retained in our system after delivery. Ensure your downstream systems have appropriate retention policies.
+</Callout>

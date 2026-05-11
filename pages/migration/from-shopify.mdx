@@ -1,0 +1,231 @@
+---
+title: Migration from Shopify
+---
+
+
+Move your e-commerce operations from Shopify to our platform with full control over your data and checkout experience.
+
+## Why Leave Shopify?
+
+| Factor | Shopify | Our Platform |
+|---|---|---|
+| Monthly Cost | $29-$299/month | No platform fee |
+| Transaction Fees | 0.5-2% | None |
+| Checkout Customization | Limited | Full |
+| Data Ownership | Limited | Complete |
+| API Access | Restricted | Full |
+
+## Migration Overview
+
+### Timeline
+
+- **Week 1:** Export data, set up products
+- **Week 2:** Import customers and historical orders
+- **Week 3:** Configure webhooks and test
+- **Week 4:** Redirect traffic, monitor
+
+## Exporting from Shopify
+
+### Products
+
+Export from Shopify Admin → Products → Export → CSV
+
+### Customers
+
+Shopify Admin → Customers → Export → CSV
+
+### Orders
+
+For historical orders, use Shopify's API:
+
+```python
+import requests
+import csv
+
+shop = "your-store.myshopify.com"
+token = "shpat_xxxxx"
+
+headers = {"X-Shopify-Access-Token": token}
+
+orders = []
+page = 1
+while True:
+    response = requests.get(
+        f"https://{shop}/admin/api/2024-01/orders.json",
+        headers=headers,
+        params={"limit": 250, "page": page}
+    )
+    data = response.json()
+    orders.extend(data['orders'])
+
+    if len(data['orders']) < 250:
+        break
+    page += 1
+
+with open('shopify_orders.csv', 'w', newline='') as f:
+    writer = csv.DictWriter(f, fieldnames=orders[0].keys())
+    writer.writeheader()
+    writer.writerows(orders)
+```
+
+## Importing to Our Platform
+
+### Products with Variants
+
+```python
+import csv
+
+with open('shopify_products.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        # Parse Shopify variants (JSON in CSV)
+        variants = json.loads(row['variants'])
+
+        product = client.products.create({
+            'name': row['title'],
+            'description': row['body_html'],
+            'variants': [
+                {
+                    'sku': v['sku'],
+                    'price': v['price'],
+                    'inventory_quantity': v['inventory_quantity'],
+                    'attributes': {
+                        'size': v['option1'],
+                        'color': v['option2']
+                    }
+                }
+                for v in variants
+            ],
+            'metadata': {'shopify_product_id': row['id']}
+        })
+```
+
+### Customers
+
+```python
+with open('shopify_customers.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        addresses = json.loads(row['addresses']) if row['addresses'] else []
+
+        customer = client.customers.create({
+            'email': row['email'],
+            'first_name': row['first_name'],
+            'last_name': row['last_name'],
+            'phone': row['phone'],
+            'address': addresses[0] if addresses else None,
+            'metadata': {'shopify_customer_id': row['id']}
+        })
+```
+
+### Orders
+
+```python
+with open('shopify_orders.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        line_items = json.loads(row['line_items'])
+
+        order = client.orders.create({
+            'order_number': row['name'],
+            'customer_id': get_customer_id(row['email']),
+            'items': [
+                {
+                    'sku': item['sku'],
+                    'quantity': item['quantity'],
+                    'price': item['price']
+                }
+                for item in line_items
+            ],
+            'subtotal': row['subtotal_price'],
+            'total': row['total_price'],
+            'tax': row['total_tax'],
+            'shipping': row['total_shipping_price_set'],
+            'status': 'delivered',  # Historical
+            'created_at': row['created_at'],
+            'metadata': {'shopify_order_id': row['id']}
+        })
+```
+
+## Handling Shopify-specific Features
+
+### Discounts
+
+Convert Shopify discount codes:
+
+```python
+discounts = client.promotions.create({
+    'code': 'SUMMER20',
+    'type': 'percentage',
+    'value': 20,
+    'min_purchase': 50,
+    'applies_to': 'all_products'
+})
+```
+
+### Collections
+
+Our category system replaces collections:
+
+```python
+for collection in shopify_collections:
+    category = client.categories.create({
+        'name': collection['title'],
+        'description': collection['body_html'],
+        'products': [p['shopify_product_id'] for p in collection['products']]
+    })
+```
+
+### Shopify Payments
+
+Replace Shopify Payments with our payment processor:
+
+1. Disable Shopify Payments in Shopify Admin
+2. Configure our payment gateway
+3. Update checkout to use our payment forms
+
+## Redirecting Traffic
+
+### DNS Change
+
+Update your DNS to point to our platform:
+
+| Record Type | Host | Value |
+|---|---|---|
+| CNAME | your-store.com | proxy.premium-api.com |
+| TXT | _shopify | (remove) |
+
+### Webhooks for Shopify
+
+Use our migration webhook to receive Shopify webhook events during transition:
+
+```python
+@app.route('/shopify-webhook', methods=['POST'])
+def shopify_webhook():
+    # Forward to our system
+    event = request.json
+
+    client.events.create({
+        'event_type': f"shopify_{event['topic']}",
+        'data': event['data']
+    })
+
+    return '', 200
+```
+
+## Post-Migration Checklist
+
+- [ ] All products imported with variants
+- [ ] Customer data migrated with order history
+- [ ] Historical orders accessible
+- [ ] Promotions/discounts migrated
+- [ ] Payment processing configured
+- [ ] DNS pointing to new platform
+- [ ] Webhooks configured
+- [ ] Testing completed in production
+- [ ] Shopify payments disabled
+- [ ] Shopify store in "paused" mode (don't delete)
+
+<Callout type="info">
+  **Shopify App Billing:** Remember to cancel any paid Shopify apps that are no longer needed to avoid ongoing charges.
+</Callout>

@@ -1,0 +1,204 @@
+---
+title: Shipping & Fulfillment
+---
+
+
+Our shipping system integrates with 50+ carriers worldwide to provide competitive rates, real-time tracking, and automated customs documentation.
+
+## Rate Calculation
+
+### Real-time Shipping Rates
+
+```typescript
+const rates = await client.shipping.get_rates({
+  from: {
+    postal_code: "97201",
+    country: "US"
+  },
+  to: {
+    postal_code: "10001",
+    country: "US"
+  },
+  packages: [
+    {
+      weight: 2.5,
+      dimensions: { length: 12, width: 8, height: 6 },
+      package_type: "box"
+    }
+  ]
+});
+```
+
+### Response
+
+```json
+{
+  "rates": [
+    {
+      "carrier": "fedex",
+      "service": "ground",
+      "estimated_days": 5,
+      "price": 12.99,
+      "currency": "USD",
+      "delivery_date": "2026-05-15"
+    },
+    {
+      "carrier": "ups",
+      "service": "next_day_air",
+      "estimated_days": 1,
+      "price": 45.99,
+      "currency": "USD",
+      "delivery_date": "2026-05-11"
+    }
+  ]
+}
+```
+
+## Label Generation
+
+### Printing Shipping Labels
+
+```python
+label = client.shipping.create_label(
+    order_id="ord_xyz789",
+    carrier="fedex",
+    service="ground",
+    label_format="pdf"
+)
+```
+
+<Callout type="info">
+  **Label Caching:** Generated labels are cached for 30 days. Reprint by referencing the `label_id` without regenerating.
+</Callout>
+
+## International Shipping
+
+### Customs Documentation
+
+For international orders, we automatically generate:
+
+- Commercial Invoice (CI)
+- Packing List
+- Certificate of Origin (when required)
+- Customs Declaration forms
+
+```typescript
+const shipment = client.shipping.create_international(
+    order_id="ord_intl_456",
+    customs_info={
+        "duties": "delivered_duty_paid",
+        "eori_number": "GB123456789",
+        "export_reason": "sale"
+    }
+);
+```
+
+### Restricted Items
+
+We automatically block shipment of items classified as:
+
+- Hazardous materials (HAZMAT)
+- Controlled substances
+- Oversized packages exceeding carrier limits
+- Items prohibited in destination country
+
+<Callout type="info">
+  **Country Restrictions:** Each destination country has specific import restrictions. Check the [Country Guide](/reference/countries) before expanding to new markets.
+</Callout>
+
+## Tracking
+
+### Real-time Tracking Updates
+
+```json
+POST /v1/webhooks/shipping_events
+{
+  "event": "tracking.update",
+  "tracking_number": "794644790132",
+  "carrier": "fedex",
+  "status": "in_transit",
+  "location": "Memphis, TN",
+  "timestamp": "2026-05-10T14:30:00Z",
+  "estimated_delivery": "2026-05-12"
+}
+```
+
+### Tracking Events Table
+
+| Event | Description |
+|---|---|
+| `label_created` | Shipping label generated |
+| `picked_up` | Package collected by carrier |
+| `in_transit` | En route between facilities |
+| `out_for_delivery` | With delivery driver |
+| `delivered` | Confirmed delivery |
+| `exception` | Delivery issue (weather, address) |
+| `returned` | Package returning to sender |
+
+## Fulfillment Centers
+
+### Warehouse Network
+
+| Region | Location | Services |
+|---|---|---|
+| US West | Portland, OR | Standard, Express, Oversized |
+| US East | Charlotte, NC | Standard, Express |
+| US Central | Dallas, TX | Standard, Express |
+| EU West | Amsterdam, NL | Standard, Express, DDP |
+| EU Central | Frankfurt, DE | Standard, Express |
+| APAC | Tokyo, JP | Standard, Express |
+
+### Inventory Allocation
+
+Configure how inventory is distributed across warehouses:
+
+```json
+{
+  "allocation_strategy": "nearest_available",
+  "fallback_strategy": "lowest_cost",
+  "safety_stock": 10,
+  "max_units_per_warehouse": 1000
+}
+```
+
+## Returns & Reverse Logistics
+
+### Creating Returns
+
+```python
+return_request = client.returns.create({
+    "order_id": "ord_xyz789",
+    "items": [
+        {"variant_id": "var_sneaker_black_10", "quantity": 1}
+    ],
+    "reason": "wrong_size",
+    "requested_action": "exchange"
+})
+```
+
+### Return Shipping Labels
+
+We generate prepaid return labels for eligible orders:
+
+```json
+{
+  "return_label": {
+    "carrier": "usps",
+    "tracking_number": "9400111899223456789012",
+    "label_url": "https://labels.example.com/return_abc123.pdf",
+    "expires_at": "2026-05-25T23:59:59Z"
+  }
+}
+```
+
+## Shipping API Reference
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/v1/shipping/rates` | Calculate shipping rates |
+| `POST` | `/v1/shipping/labels` | Create shipping label |
+| `GET` | `/v1/shipping/labels/{id}` | Get label by ID |
+| `GET` | `/v1/shipping/tracking/{tracking}` | Track shipment |
+| `POST` | `/v1/shipping/returns` | Create return shipment |

@@ -1,0 +1,171 @@
+---
+title: Video Tutorial Embed
+description: Embedded video placeholders for tutorial content
+---
+
+# Video Tutorials
+
+Watch step-by-step video guides to learn the platform.
+
+## Getting Started
+
+<div class="video-grid">
+  <div class="video-card">
+    <div class="video-thumbnail">
+      <div class="video-play-btn">▶</div>
+      <div class="video-duration">5:32</div>
+    </div>
+    <div class="video-info">
+      <div class="video-title">Quick Start: Your First Integration</div>
+      <div class="video-meta">
+        <span class="video-author">ZuDev</span>
+        <span class="video-views">12.4K views</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="video-card">
+    <div class="video-thumbnail">
+      <div class="video-play-btn">▶</div>
+      <div class="video-duration">8:15</div>
+    </div>
+    <div class="video-info">
+      <div class="video-title">Setting Up OAuth2 Authentication</div>
+      <div class="video-meta">
+        <span class="video-author">ZuDev</span>
+        <span class="video-views">8.2K views</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="video-card">
+    <div class="video-thumbnail">
+      <div class="video-play-btn">▶</div>
+      <div class="video-duration">12:47</div>
+    </div>
+    <div class="video-info">
+      <div class="video-title">Building a Checkout Flow</div>
+      <div class="video-meta">
+        <span class="video-author">ZuDev</span>
+        <span class="video-views">6.1K views</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+## Advanced Topics
+
+<div class="video-grid">
+  <div class="video-card">
+    <div class="video-thumbnail video-thumbnail--advanced">
+      <div class="video-play-btn">▶</div>
+      <div class="video-duration">18:30</div>
+    </div>
+    <div class="video-info">
+      <div class="video-title">Webhooks: Real-Time Event Processing</div>
+      <div class="video-meta">
+        <span class="video-author">ZuDev</span>
+        <span class="video-views">4.8K views</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="video-card">
+    <div class="video-thumbnail video-thumbnail--advanced">
+      <div class="video-play-btn">▶</div>
+      <div class="video-duration">14:22</div>
+    </div>
+    <div class="video-info">
+      <div class="video-title">Analytics: Funnels and Segmentation</div>
+      <div class="video-meta">
+        <span class="video-author">ZuDev</span>
+        <span class="video-views">3.5K views</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .video-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--card);
+    transition: all 0.2s ease;
+  }
+
+  .video-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.15);
+  }
+
+  .video-thumbnail {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .video-thumbnail--advanced {
+    background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+  }
+
+  .video-play-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--primary);
+    padding-left: 0.35rem;
+    transition: all 0.15s ease;
+  }
+
+  .video-card:hover .video-play-btn {
+    background: white;
+    transform: scale(1.1);
+  }
+
+  .video-duration {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+  }
+
+  .video-info {
+    padding: 1rem;
+  }
+
+  .video-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+
+  .video-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+`}</style>

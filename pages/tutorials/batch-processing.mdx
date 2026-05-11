@@ -1,0 +1,908 @@
+---
+title: Batch Processing Tutorial
+description: Learn how to efficiently process large volumes of data with batch operations
+---
+
+Batch processing allows you to handle high-volume operations efficiently, reducing API calls and improving performance. This tutorial covers batch operations for products, orders, and analytics events.
+
+## When to Use Batch Processing
+
+<div class="tutorial-progress">
+  <div class="tutorial-step tutorial-step--current">
+    <div class="tutorial-step__number">1</div>
+    <div class="tutorial-step__label">Batch Products</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">2</div>
+    <div class="tutorial-step__label">Batch Orders</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">3</div>
+    <div class="tutorial-step__label">Analytics Events</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">4</div>
+    <div class="tutorial-step__label">Processing Patterns</div>
+  </div>
+  <div class="tutorial-step tutorial-step--pending">
+    <div class="tutorial-step__number">5</div>
+    <div class="tutorial-step__label">Monitoring</div>
+  </div>
+</div>
+
+Use batch operations when:
+
+- Importing large product catalogs (100+ items)
+- Syncing inventory across multiple channels
+- Sending analytics events at scale
+- Processing bulk order updates
+- Migrating data from external systems
+
+<Callout type="info">
+  **Batch vs. Individual Requests:** Batch operations can reduce hundreds of API
+  calls to a single request, dramatically improving throughput and reducing rate
+  limit pressure.
+</Callout>
+
+## Step 1: Batch Product Operations
+
+### Bulk Create Products
+
+Import a complete product catalog in a single request:
+
+```javascript
+// src/batch/products.js
+import { client } from "../client.js";
+
+/**
+ * Bulk create products from an external catalog
+ * @param {Array} products - Array of product objects
+ */
+async function bulkCreateProducts(products) {
+  console.log(`Creating ${products.length} products...`);
+
+  // Process in batches of 100 (API limit)
+  const batchSize = 100;
+  const results = {
+    created: [],
+    failed: [],
+  };
+
+  for (let i = 0; i < products.length; i += batchSize) {
+    const batch = products.slice(i, i + batchSize);
+    console.log(`Processing batch ${Math.floor(i / batchSize) + 1}...`);
+
+    try {
+      const response = await client.post("/products/bulk", {
+        products: batch.map(formatProduct),
+      });
+
+      // Collect successful creations
+      for (const item of response.data) {
+        if (item.status === "created") {
+          results.created.push(item);
+        } else {
+          results.failed.push({
+            index: i + response.data.indexOf(item),
+            error: item.error,
+          });
+        }
+      }
+
+      console.log(
+        `Batch complete: ${response.meta.created} created, ${response.meta.failed} failed`,
+      );
+    } catch (error) {
+      console.error(
+        `Batch ${Math.floor(i / batchSize) + 1} failed:`,
+        error.message,
+      );
+      throw error;
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Format a product for the API
+ */
+function formatProduct(product) {
+  return {
+    name: product.name,
+    description: product.description,
+    type: product.type || "physical",
+    status: product.status || "draft",
+    categories: product.categories || [],
+    tags: product.tags || [],
+    pricing: {
+      currency: product.currency || "USD",
+      base_price: product.price,
+    },
+    inventory: {
+      track_quantity: product.trackInventory !== false,
+      quantity: product.inventory || 0,
+    },
+    variants: (product.variants || []).map((v) => ({
+      name: v.name,
+      sku: v.sku,
+      price: v.price,
+      inventory_quantity: v.quantity,
+      attributes: v.attributes,
+    })),
+  };
+}
+```
+
+### Bulk Update Products
+
+Update prices, inventory, or status across your catalog:
+
+```javascript
+// src/batch/update-inventory.js
+import { client } from "../client.js";
+
+/**
+ * Bulk update inventory from external system
+ * @param {Array} inventoryUpdates - Array of { variantId, quantity }
+ */
+async function bulkUpdateInventory(inventoryUpdates) {
+  console.log(`Updating inventory for ${inventoryUpdates.length} variants...`);
+
+  const batchSize = 100;
+  const results = {
+    updated: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (let i = 0; i < inventoryUpdates.length; i += batchSize) {
+    const batch = inventoryUpdates.slice(i, i + batchSize);
+
+    try {
+      const response = await client.put("/products/bulk", {
+        updates: batch.map((update) => ({
+          variant_id: update.variantId,
+          inventory_quantity: update.quantity,
+          // Optionally update other fields
+          inventory_policy: update.inventoryPolicy || "deny",
+        })),
+      });
+
+      results.updated += response.meta.updated;
+
+      // Track failures
+      for (const item of response.data) {
+        if (item.status === "failed") {
+          results.failed++;
+          results.errors.push(item.error);
+        }
+      }
+
+      console.log(`Batch complete: ${results.updated} updated so far`);
+    } catch (error) {
+      console.error(`Batch failed:`, error.message);
+      throw error;
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Full catalog sync with change detection
+ */
+async function syncCatalog(localProducts) {
+  console.log("Starting catalog sync...");
+
+  // Fetch current products from API
+  const apiProducts = await fetchAllProducts();
+  const apiVariants = new Map();
+
+  // Build lookup map
+  for (const product of apiProducts) {
+    for (const variant of product.variants || []) {
+      apiVariants.set(variant.sku, variant);
+    }
+  }
+
+  // Determine updates needed
+  const updates = [];
+  const creates = [];
+
+  for (const localProduct of localProducts) {
+    for (const localVariant of localProduct.variants || []) {
+      const apiVariant = apiVariants.get(localVariant.sku);
+
+      if (apiVariant) {
+        // Check if update needed
+        if (
+          apiVariant.price !== localVariant.price ||
+          apiVariant.inventory_quantity !== localVariant.quantity
+        ) {
+          updates.push({
+            variant_id: apiVariant.id,
+            price: localVariant.price,
+            inventory_quantity: localVariant.quantity,
+          });
+        }
+      } else {
+        // New variant
+        creates.push({
+          ...localProduct,
+          variants: [localVariant],
+        });
+      }
+    }
+  }
+
+  console.log(`Sync plan: ${creates.length} new, ${updates.length} updates`);
+
+  // Apply changes
+  if (updates.length > 0) {
+    await bulkUpdateInventory(updates);
+  }
+
+  if (creates.length > 0) {
+    await bulkCreateProducts(creates);
+  }
+
+  return {
+    created: creates.length,
+    updated: updates.length,
+  };
+}
+```
+
+## Step 2: Batch Order Processing
+
+### Bulk Order Updates
+
+Process multiple orders simultaneously:
+
+```javascript
+// src/batch/orders.js
+import { client } from "../client.js";
+
+/**
+ * Bulk update order statuses
+ * Useful for batch fulfillment operations
+ */
+async function bulkUpdateOrders(orderIds, updateData) {
+  console.log(`Updating ${orderIds.length} orders...`);
+
+  const response = await client.put("/orders/bulk", {
+    order_ids: orderIds,
+    updates: updateData,
+  });
+
+  return {
+    updated: response.meta.updated,
+    failed: response.meta.failed,
+    results: response.data,
+  };
+}
+
+/**
+ * Example: Mark multiple orders as fulfilled
+ */
+async function bulkFulfill(orderIds, trackingData) {
+  return bulkUpdateOrders(orderIds, {
+    status: "fulfilled",
+    fulfillment: {
+      tracking_number: trackingData.trackingNumber,
+      carrier: trackingData.carrier,
+      fulfilled_at: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Export orders to external system
+ */
+async function exportOrders(dateRange, batchSize = 100) {
+  const orders = [];
+  let page = 1;
+  let hasMore = true;
+
+  console.log("Exporting orders...");
+
+  while (hasMore) {
+    const response = await client.get(
+      `/orders?page=${page}&per_page=${batchSize}` +
+        `&created_after=${dateRange.start}&created_before=${dateRange.end}`,
+    );
+
+    orders.push(...response.data);
+
+    console.log(`Fetched page ${page}: ${response.data.length} orders`);
+
+    hasMore = page < response.meta.total_pages;
+    page++;
+
+    // Respect rate limits - add delay between pages
+    if (hasMore) {
+      await sleep(100);
+    }
+  }
+
+  console.log(`Export complete: ${orders.length} orders`);
+
+  return orders;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+```
+
+## Step 3: Batch Analytics Events
+
+Send large numbers of events efficiently:
+
+### Using the SDK Batching
+
+```javascript
+// src/batch/analytics.js
+import { ZephyrClient } from "@zephyr/node-sdk";
+
+const client = new ZephyrClient({
+  apiKey: process.env.ZEPHYR_API_KEY,
+  // Configure batching
+  analytics: {
+    batchSize: 100, // Flush after 100 events
+    flushInterval: 5, // Or every 5 seconds
+    maxRetries: 3, // Retry failed batches
+  },
+});
+
+// Track events - SDK handles batching automatically
+async function trackUserJourney(userId, events) {
+  for (const event of events) {
+    client.analytics.track({
+      event_name: event.name,
+      user_id: userId,
+      properties: event.properties,
+    });
+  }
+}
+
+// The SDK will batch these and send them efficiently
+await trackUserJourney("usr_abc123", [
+  { name: "page_view", properties: { page: "/home" } },
+  { name: "page_view", properties: { page: "/products" } },
+  { name: "product_viewed", properties: { product_id: "prod_123" } },
+  {
+    name: "product_added_to_cart",
+    properties: { product_id: "prod_123", price: 29.99 },
+  },
+  { name: "checkout_started", properties: { cart_value: 29.99 } },
+]);
+```
+
+### Direct API Batch Events
+
+```javascript
+// src/batch/analytics-direct.js
+import { client } from "../client.js";
+
+/**
+ * Send batch analytics events directly via API
+ * Use this when you need more control over batching
+ */
+class AnalyticsBatcher {
+  constructor(client, options = {}) {
+    this.client = client;
+    this.batchSize = options.batchSize || 100;
+    this.flushInterval = options.flushInterval || 5000;
+    this.events = [];
+    this.timer = null;
+    this.userId = null;
+  }
+
+  /**
+   * Start tracking for a user
+   */
+  startUser(userId) {
+    this.userId = userId;
+    this.startTimer();
+  }
+
+  /**
+   * Add an event to the batch
+   */
+  track(eventName, properties = {}) {
+    this.events.push({
+      event_name: eventName,
+      user_id: this.userId,
+      timestamp: new Date().toISOString(),
+      properties,
+      context: {
+        ip: "127.0.0.1", // Should be real IP
+        user_agent: "BatchProcessor/1.0",
+        locale: "en-US",
+      },
+    });
+
+    // Flush if batch is full
+    if (this.events.length >= this.batchSize) {
+      this.flush();
+    }
+  }
+
+  /**
+   * Start the flush timer
+   */
+  startTimer() {
+    this.timer = setInterval(() => this.flush(), this.flushInterval);
+  }
+
+  /**
+   * Stop the flush timer
+   */
+  stopTimer() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  /**
+   * Flush pending events
+   */
+  async flush() {
+    if (this.events.length === 0) return;
+
+    const eventsToSend = [...this.events];
+    this.events = [];
+
+    try {
+      const response = await this.client.post("/analytics/events/batch", {
+        events: eventsToSend,
+      });
+
+      console.log(
+        `Flushed ${eventsToSend.length} events: ${response.accepted} accepted`,
+      );
+
+      if (response.failed > 0) {
+        console.warn(`${response.failed} events failed validation`);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to flush ${eventsToSend.length} events:`,
+        error.message,
+      );
+
+      // Re-add events to batch for retry
+      this.events.unshift(...eventsToSend);
+    }
+  }
+
+  /**
+   * Stop tracking and flush remaining events
+   */
+  async stop() {
+    this.stopTimer();
+    await this.flush();
+  }
+}
+
+// Usage
+const batcher = new AnalyticsBatcher(client, {
+  batchSize: 50,
+  flushInterval: 10000,
+});
+
+batcher.startUser("usr_abc123");
+
+// Track events
+batcher.track("page_view", { page: "/products", category: "electronics" });
+batcher.track("search", { query: "wireless headphones", results_count: 24 });
+batcher.track("product_viewed", { product_id: "prod_123", price: 199.99 });
+
+// Stop and flush
+await batcher.stop();
+```
+
+### Import Historical Events
+
+```javascript
+// src/batch/import-historical.js
+import { client } from "../client.js";
+
+/**
+ * Import historical events from a CSV or database
+ * Useful for migrating from another analytics platform
+ */
+async function importHistoricalEvents(events, options = {}) {
+  const { batchSize = 100, retryDelay = 1000, maxRetries = 3 } = options;
+
+  console.log(`Importing ${events.length} historical events...`);
+
+  const results = {
+    imported: 0,
+    failed: 0,
+    batches: 0,
+  };
+
+  for (let i = 0; i < events.length; i += batchSize) {
+    const batch = events.slice(i, i + batchSize);
+    results.batches++;
+
+    // Retry logic
+    let retries = 0;
+    let success = false;
+
+    while (!success && retries < maxRetries) {
+      try {
+        const response = await client.post("/analytics/events/batch", {
+          events: batch.map((event) => ({
+            event_name: event.type,
+            user_id: event.userId,
+            timestamp: event.timestamp,
+            properties: event.properties,
+            // Historical events must have this flag
+            is_historical: true,
+          })),
+        });
+
+        results.imported += response.accepted;
+        results.failed += response.failed;
+        success = true;
+
+        console.log(
+          `Batch ${results.batches}: ${response.accepted}/${batch.length} imported`,
+        );
+      } catch (error) {
+        retries++;
+        console.error(
+          `Batch ${results.batches} failed (attempt ${retries}):`,
+          error.message,
+        );
+
+        if (retries < maxRetries) {
+          await sleep(retryDelay * retries); // Exponential backoff
+        }
+      }
+    }
+
+    if (!success) {
+      console.error(
+        `Batch ${results.batches} failed after ${maxRetries} attempts`,
+      );
+      results.failed += batch.length;
+    }
+
+    // Progress logging
+    const progress = (((i + batchSize) / events.length) * 100).toFixed(1);
+    console.log(`Progress: ${progress}%`);
+  }
+
+  return results;
+}
+
+// Example: Import from CSV
+async function importFromCSV(filePath) {
+  const events = await parseCSV(filePath);
+
+  const results = await importHistoricalEvents(events, {
+    batchSize: 100,
+    retryDelay: 2000,
+  });
+
+  console.log("Import complete:", results);
+}
+```
+
+## Step 4: Processing Patterns
+
+### Parallel Batch Processing
+
+```javascript
+// src/batch/parallel.js
+import { client } from "../client.js";
+
+/**
+ * Process multiple batches in parallel for maximum throughput
+ * Use with caution - increases rate limit pressure
+ */
+async function parallelBatchProcess(items, processFn, options = {}) {
+  const {
+    concurrency = 3, // Number of parallel batches
+    batchSize = 100,
+  } = options;
+
+  // Split into batches
+  const batches = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    batches.push(items.slice(i, i + batchSize));
+  }
+
+  console.log(`Processing ${items.length} items in ${batches.length} batches`);
+  console.log(`Parallelism: ${concurrency} concurrent batches`);
+
+  const results = [];
+  let batchIndex = 0;
+
+  // Process batches with limited concurrency
+  async function processBatch(batch) {
+    const currentBatch = batchIndex++;
+    console.log(`Starting batch ${currentBatch + 1}/${batches.length}`);
+
+    const startTime = Date.now();
+    const result = await processFn(batch);
+    const duration = Date.now() - startTime;
+
+    console.log(`Batch ${currentBatch + 1} complete in ${duration}ms`);
+
+    return result;
+  }
+
+  // Run batches with concurrency limit
+  const inProgress = [];
+  for (const batch of batches) {
+    const promise = processBatch(batch);
+    inProgress.push(promise);
+
+    // Wait if we've reached concurrency limit
+    if (inProgress.length >= concurrency) {
+      const result = await Promise.race(inProgress);
+      results.push(result);
+
+      // Remove completed promise
+      const completedIndex = inProgress.findIndex(
+        (p) => p === Promise.race(inProgress),
+      );
+      inProgress.splice(completedIndex, 1);
+    }
+  }
+
+  // Wait for remaining batches
+  const remainingResults = await Promise.all(inProgress);
+  results.push(...remainingResults);
+
+  return results;
+}
+
+// Usage: Sync inventory across multiple warehouses in parallel
+async function syncAllWarehouses() {
+  const warehouses = await getWarehouseData();
+
+  const results = await parallelBatchProcess(
+    warehouses,
+    async (warehouseItems) => {
+      return bulkUpdateInventory(warehouseItems);
+    },
+    {
+      concurrency: 5,
+      batchSize: 50,
+    },
+  );
+
+  const totalUpdated = results.reduce((sum, r) => sum + r.updated, 0);
+  console.log(`Total inventory updated: ${totalUpdated}`);
+
+  return results;
+}
+```
+
+### Rate-Limited Batch Processing
+
+```javascript
+// src/batch/rate-limited.js
+import { client } from "../client.js";
+
+/**
+ * Batch processor with built-in rate limit handling
+ * Automatically backs off when rate limits are hit
+ */
+class RateLimitedBatchProcessor {
+  constructor(client, options = {}) {
+    this.client = client;
+    this.batchSize = options.batchSize || 100;
+    this.baseDelay = options.baseDelay || 1000;
+    this.maxDelay = options.maxDelay || 60000;
+    this.maxRetries = options.maxRetries || 5;
+  }
+
+  /**
+   * Process items with automatic rate limiting
+   */
+  async process(items, processFn) {
+    const results = [];
+    let rateLimitHits = 0;
+
+    for (let i = 0; i < items.length; i += this.batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      const batchNum = Math.floor(i / this.batchSize) + 1;
+      const totalBatches = Math.ceil(items.length / this.batchSize);
+
+      console.log(`Processing batch ${batchNum}/${totalBatches}`);
+
+      let retries = 0;
+      let success = false;
+
+      while (!success && retries < this.maxRetries) {
+        try {
+          const batchResult = await processFn(batch);
+          results.push(batchResult);
+          success = true;
+        } catch (error) {
+          if (error.code === "rate_limit_exceeded") {
+            retries++;
+            rateLimitHits++;
+
+            // Exponential backoff with jitter
+            const delay = Math.min(
+              this.baseDelay * Math.pow(2, retries - 1) + Math.random() * 1000,
+              this.maxDelay,
+            );
+
+            console.log(
+              `Rate limited on batch ${batchNum}, attempt ${retries}. ` +
+                `Waiting ${delay}ms before retry...`,
+            );
+
+            await sleep(delay);
+
+            if (retries >= this.maxRetries) {
+              console.error(
+                `Batch ${batchNum} failed after ${retries} attempts`,
+              );
+              results.push({ error: error.message, batch });
+            }
+          } else {
+            // Non-rate-limit error
+            console.error(`Batch ${batchNum} failed:`, error.message);
+            results.push({ error: error.message, batch });
+            success = true; // Don't retry
+          }
+        }
+      }
+
+      // Delay between batches (unless we just got rate limited)
+      if (!success || rateLimitHits === 0) {
+        await sleep(this.baseDelay);
+      }
+    }
+
+    return {
+      results,
+      rateLimitHits,
+      totalBatches: Math.ceil(items.length / this.batchSize),
+    };
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Usage
+const processor = new RateLimitedBatchProcessor(client, {
+  batchSize: 100,
+  baseDelay: 500,
+  maxRetries: 5,
+});
+
+const result = await processor.process(inventoryUpdates, (batch) =>
+  client.put("/products/bulk", { updates: batch }),
+);
+
+console.log("Rate limit hits:", result.rateLimitHits);
+```
+
+## Step 5: Monitoring and Debugging
+
+### Batch Progress Tracking
+
+```javascript
+// src/batch/progress.js
+import { EventEmitter } from "events";
+
+/**
+ * Progress tracker for long-running batch operations
+ */
+class BatchProgress extends EventEmitter {
+  constructor(total) {
+    super();
+    this.total = total;
+    this.processed = 0;
+    this.succeeded = 0;
+    this.failed = 0;
+    this.startTime = Date.now();
+  }
+
+  /**
+   * Report progress
+   */
+  report(count = 1, success = true) {
+    this.processed += count;
+    if (success) {
+      this.succeeded += count;
+    } else {
+      this.failed += count;
+    }
+
+    this.emit("progress", this.getStats());
+  }
+
+  /**
+   * Get current statistics
+   */
+  getStats() {
+    const elapsed = Date.now() - this.startTime;
+    const rate = this.processed / (elapsed / 1000); // items per second
+    const remaining = this.total - this.processed;
+    const etaSeconds = remaining / rate;
+
+    return {
+      total: this.total,
+      processed: this.processed,
+      succeeded: this.succeeded,
+      failed: this.failed,
+      percent: ((this.processed / this.total) * 100).toFixed(1),
+      rate: rate.toFixed(2),
+      eta: etaSeconds > 0 ? `${Math.ceil(etaSeconds)}s remaining` : "complete",
+    };
+  }
+
+  /**
+   * Print progress to console
+   */
+  print() {
+    const stats = this.getStats();
+    console.clear();
+    console.log(`
+========================================
+Batch Processing Progress
+========================================
+Total:      ${stats.total}
+Processed:  ${stats.processed}
+Succeeded:  ${stats.succeeded}
+Failed:     ${stats.failed}
+----------------------------------------
+Progress:   ${stats.percent}%
+Rate:       ${stats.rate} items/sec
+ETA:        ${stats.eta}
+========================================
+    `);
+  }
+}
+
+// Usage
+const progress = new BatchProgress(products.length);
+
+// Log progress every second
+progress.on("progress", () => progress.print());
+
+// Process with progress tracking
+for (const product of products) {
+  try {
+    await createProduct(product);
+    progress.report(1, true);
+  } catch (error) {
+    progress.report(1, false);
+  }
+}
+
+progress.print();
+console.log("Batch complete!");
+```
+
+## Common Issues and Solutions
+
+| Issue                  | Cause                       | Solution                                        |
+| ---------------------- | --------------------------- | ----------------------------------------------- |
+| Partial batch failures | Some items invalid          | Check `meta.failed` count, review error details |
+| Rate limit hits        | Too many concurrent batches | Reduce concurrency, use rate-limited processor  |
+| Timeout errors         | Batch too large             | Reduce batch size                               |
+| Out of memory          | Too many items in memory    | Process in smaller chunks or use streaming      |
+
+## Next Steps
+
+- [First Integration Tutorial](/tutorials/first-integration) - Build your first integration
+- [Webhook Handler Tutorial](/tutorials/webhook-handler) - Process real-time events
+- [Environment Configuration Guide](/guides/environments) - Manage different environments
+- [Rate Limits Guide](/guides/rate-limits) - Handle rate limits effectively

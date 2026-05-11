@@ -1,0 +1,231 @@
+---
+title: Payment Integration
+---
+
+
+Connect your application with our Payment API to accept payments, handle subscriptions, and manage refunds securely.
+
+## Supported Payment Methods
+
+| Method | Types |
+|---|---|
+| Cards | Visa, Mastercard, Amex, Discover |
+| Digital Wallets | Apple Pay, Google Pay, Samsung Pay |
+| Bank Transfers | ACH, SEPA, BACS |
+| Buy Now Pay Later | Klarna, Affirm, Afterpay |
+
+## Payment Flows
+
+### Standard Payment
+
+```typescript
+const payment = await client.payments.create({
+  amount: 2999,  // Amount in cents
+  currency: "usd",
+  customer_id: "cust_abc123",
+  payment_method: "pm_card_visa_ending4242",
+  order_id: "ord_xyz789",
+  description: "Premium Wireless Headphones",
+  metadata: {
+    product_id: "prod_headphones_001",
+    variant: "black"
+  }
+});
+```
+
+### Payment Response
+
+```json
+{
+  "id": "pay_abc123",
+  "status": "succeeded",
+  "amount": 2999,
+  "currency": "usd",
+  "customer_id": "cust_abc123",
+  "payment_method": "pm_card_visa_ending4242",
+  "created_at": "2026-05-10T15:42:00Z",
+  "receipt_url": "https://receipts.example.com/pay_abc123"
+}
+```
+
+## 3D Secure Authentication
+
+Handle SCA (Strong Customer Authentication) requirements:
+
+```typescript
+const payment = await client.payments.create({
+  amount: 5000,
+  currency: "usd",
+  payment_method: "pm_card_visa_ending4242",
+  authentication_method: "3d_secure",
+  return_url: "https://your-app.com/payment/complete"
+});
+
+// If 3DS required, response includes:
+{
+  "status": "requires_action",
+  "authentication_url": "https://acs.example.com/3ds authenticate",
+  "payment_intent_id": "pi_xyz789"
+}
+```
+
+## Payment Statuses
+
+| Status | Description | Next Action |
+|---|---|---|
+| `pending` | Payment initiated, awaiting confirmation | Wait for webhook |
+| `processing` | Auth captured, final capture pending | Wait for webhook |
+| `succeeded` | Payment complete, funds transferred | Fulfill order |
+| `failed` | Payment declined or error | Show error to customer |
+| `cancelled` | Payment cancelled before completion | - |
+| `refunded` | Full refund issued | - |
+| `partially_refunded` | Partial refund issued | - |
+
+## Handling Payment Failures
+
+```python
+try:
+    payment = client.payments.create({...})
+except PaymentDeclinedError as e:
+    # Handle specific decline codes
+    if e.decline_code == "insufficient_funds":
+        show_error("Payment declined: insufficient funds")
+    elif e.decline_code == "card_expired":
+        show_error("Card has expired")
+    elif e.decline_code == "fraud_suspected":
+        log_fraud_attempt(e)
+
+except PaymentError as e:
+    # Generic payment error
+    show_error("Payment failed. Please try again.")
+```
+
+### Decline Codes
+
+| Code | Description |
+|---|---|
+| `card_declined` | Generic decline |
+| `insufficient_funds` | Account lacks funds |
+| `card_expired` | Card past expiry |
+| `processing_error` | Temporary issue, retry |
+| `fraud_suspected` | Blocked for fraud |
+| `invalid_card` | Card number invalid |
+
+## Payment Webhooks
+
+Subscribe to payment events:
+
+| Event | Description |
+|---|---|
+| `payment.created` | New payment initiated |
+| `payment.processing` | Auth captured |
+| `payment.succeeded` | Payment complete |
+| `payment.failed` | Payment declined |
+| `payment.refunded` | Refund processed |
+
+## Refunds
+
+### Full Refund
+
+```python
+refund = client.payments.refund(payment_id="pay_abc123")
+```
+
+### Partial Refund
+
+```python
+refund = client.payments.refund(
+    payment_id="pay_abc123",
+    amount=1500,  # Refund $15.00
+    reason="customer_request"
+)
+```
+
+### Refund Response
+
+```json
+{
+  "id": "ref_xyz789",
+  "payment_id": "pay_abc123",
+  "amount": 1500,
+  "status": "succeeded",
+  "reason": "customer_request",
+  "created_at": "2026-05-11T09:00:00Z"
+}
+```
+
+## Subscriptions
+
+### Creating Subscriptions
+
+```typescript
+const subscription = await client.subscriptions.create({
+  customer_id: "cust_abc123",
+  price_id: "price_premium_monthly",
+  payment_method: "pm_card_visa_ending4242",
+  billing_interval: "month",
+  trial_period_days: 14,
+  metadata: {
+    plan: "premium",
+    source: "website"
+  }
+});
+```
+
+### Subscription States
+
+| State | Description |
+|---|---|
+| `active` | Subscription current, payments succeeding |
+| `past_due` | Payment failed, retry in progress |
+| `cancelled` | Ended by customer or system |
+| `expired` | Subscription term ended |
+| `trialing` | In trial period |
+
+### Managing Subscriptions
+
+```python
+updated = client.subscriptions.update(
+    subscription_id="sub_abc123",
+    price_id="price_enterprise_monthly",
+    proration="immediate"
+)
+
+client.subscriptions.cancel(
+    subscription_id="sub_abc123",
+    cancel_at_period_end=True  # Cancel at end of current period
+)
+```
+
+## PCI Compliance
+
+All payment data is tokenized and processed via our PCI-DSS Level 1 certified infrastructure. Your servers never see raw card numbers.
+
+<Callout type="info">
+  **Card Tokenization:** Use `pm_card_visa_ending4242` style tokens returned from our frontend SDK — never pass raw card numbers to your backend.
+</Callout>
+
+### Accepting New Cards (Frontend)
+
+```typescript
+import { PaymentForm } from '@premium-api/react-sdk';
+
+function CheckoutPage() {
+  return (
+    <PaymentForm
+      onTokenGenerated={(token) => {
+        // Send token to your backend
+        createPayment({ payment_method: token });
+      }}
+      appearance={{
+        theme: 'stripe',
+        fonts: ['Inter']
+      }}
+    />
+  );
+}
+```
+
+<Callout type="info">
+  **Security Best Practice:** Always use our hosted payment form or SDKs to collect card data. Never build your own form that sends raw card numbers to your server.
+</Callout>

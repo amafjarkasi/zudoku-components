@@ -1,0 +1,60 @@
+---
+title: Python SDK
+---
+
+
+The Premium Python SDK provides idiomatic access to our APIs. It supports both synchronous and asynchronous (asyncio) request patterns and automatically handles rate limits with intelligent backoff.
+
+## Installation
+
+Install via pip:
+
+```bash
+pip install premium-api-python
+```
+
+## Initialization
+
+Initialize the client using your Secret API Key. 
+
+```python
+import os
+from premium_api import PremiumClient
+
+client = PremiumClient(
+    api_key=os.environ.get("PREMIUM_API_KEY")
+)
+```
+
+<Callout type="info">
+  We strongly recommend loading your API key from an environment variable rather than hardcoding it in your scripts.
+</Callout>
+
+## Examples
+
+### Fetching Orders
+
+```python
+orders = client.orders.list(limit=50, status="paid")
+
+for order in orders:
+    print(f"Order {order.id}: ${order.total}")
+```
+
+### High-Throughput Async Analytics
+
+When sending thousands of analytics events from a backend service, utilize the async client for maximum throughput.
+
+```python
+import asyncio
+from premium_api import AsyncPremiumClient
+
+async def track_batch(events):
+    async_client = AsyncPremiumClient()
+    await async_client.analytics.track_batch(events)
+
+asyncio.run(track_batch([
+    {"name": "login", "timestamp": "2026-05-10T14:00:00Z"},
+    {"name": "purchase", "timestamp": "2026-05-10T14:05:00Z"}
+]))
+```

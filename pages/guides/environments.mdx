@@ -1,0 +1,532 @@
+---
+title: Environment Configuration Guide
+description: Manage development, staging, and production environments effectively
+---
+
+Proper environment configuration is critical for building reliable integrations. This guide covers strategies for managing different environments, configuration patterns, and best practices for keeping your API keys and secrets secure.
+
+## Environment Overview
+
+| Environment     | Purpose                       | API Base URL                        | Characteristics                   |
+| --------------- | ----------------------------- | ----------------------------------- | --------------------------------- |
+| **Development** | Local development and testing | `https://api-sandbox.zephyr.com/v1` | Full API access, relaxed limits   |
+| **Staging**     | Pre-production testing        | `https://api-staging.zephyr.com/v1` | Production-like, real data subset |
+| **Production**  | Live applications             | `https://api.zephyr.com/v1`         | Full rate limits, real data       |
+
+## Configuration Patterns
+
+### 1. Environment Variables (Recommended)
+
+The most common and secure approach for server-side applications:
+
+```bash
+# .env.development
+ZEPHYR_API_KEY=sk_test_dev_abc123...
+ZEPHYR_API_URL=https://api-sandbox.zephyr.com/v1
+ZEPHYR_WEBHOOK_SECRET=whsec_test_dev_xyz789...
+LOG_LEVEL=debug
+
+# .env.staging
+ZEPHYR_API_KEY=sk_test_staging_abc123...
+ZEPHYR_API_URL=https://api-staging.zephyr.com/v1
+ZEPHYR_WEBHOOK_SECRET=whsec_staging_xyz789...
+LOG_LEVEL=info
+
+# .env.production
+ZEPHYR_API_KEY=sk_live_prod_abc123...
+ZEPHYR_API_URL=https://api.zephyr.com/v1
+ZEPHYR_WEBHOOK_SECRET=whsec_live_xyz789...
+LOG_LEVEL=warn
+```
+
+```javascript
+// src/config.js
+import dotenv from "dotenv";
+import path from "path";
+
+// Load environment-specific .env file
+const env = process.env.NODE_ENV || "development";
+dotenv.config({ path: path.resolve(`.env.${env}`) });
+
+export const config = {
+  api: {
+    key: process.env.ZEPHYR_API_KEY,
+    url: process.env.ZEPHYR_API_URL,
+    webhookSecret: process.env.ZEPHYR_WEBHOOK_SECRET,
+  },
+  logging: {
+    level: process.env.LOG_LEVEL || "info",
+  },
+  features: {
+    enableMetrics: process.env.ENABLE_METRICS === "true",
+    enableCaching: process.env.ENABLE_CACHING !== "false",
+  },
+};
+
+// Validate required configuration
+function validateConfig() {
+  const required = ["api.key", "api.url"];
+  const missing = required.filter((path) => {
+    const value = path.split(".").reduce((obj, key) => obj?.[key], config);
+    return !value;
+  });
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required configuration: ${missing.join(", ")}`);
+  }
+}
+
+validateConfig();
+```
+
+### 2. Configuration Files
+
+For applications that need more complex configuration:
+
+```javascript
+// config/index.js
+const environments = {
+  development: {
+    api: {
+      baseUrl: "https://api-sandbox.zephyr.com/v1",
+      timeout: 30000,
+      retries: 3,
+    },
+    rateLimits: {
+      products: { read: 100, write: 20 },
+      orders: { read: 100, write: 20 },
+      analytics: { read: 50, write: 1000 },
+    },
+    caching: {
+      enabled: true,
+      ttl: 300, // 5 minutes
+    },
+  },
+
+  staging: {
+    api: {
+      baseUrl: "https://api-staging.zephyr.com/v1",
+      timeout: 15000,
+      retries: 2,
+    },
+    rateLimits: {
+      products: { read: 50, write: 10 },
+      orders: { read: 50, write: 10 },
+      analytics: { read: 20, write: 500 },
+    },
+    caching: {
+      enabled: true,
+      ttl: 60, // 1 minute
+    },
+  },
+
+  production: {
+    api: {
+      baseUrl: "https://api.zephyr.com/v1",
+      timeout: 10000,
+      retries: 1,
+    },
+    rateLimits: {
+      products: { read: 25, write: 5 },
+      orders: { read: 25, write: 5 },
+      analytics: { read: 10, write: 100 },
+    },
+    caching: {
+      enabled: true,
+      ttl: 30, // 30 seconds
+    },
+  },
+};
+
+export function getConfig(env = process.env.NODE_ENV) {
+  const config = environments[env];
+
+  if (!config) {
+    throw new Error(`Unknown environment: ${env}`);
+  }
+
+  return {
+    ...config,
+    environment: env,
+    isProduction: env === "production",
+    isDevelopment: env === "development",
+  };
+}
+```
+
+```javascript
+// src/client.js - Using configuration
+import { getConfig } from "../config/index.js";
+
+const config = getConfig();
+
+class ZephyrClient {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.baseUrl = config.api.baseUrl;
+    this.timeout = config.api.timeout;
+    this.retries = config.api.retries;
+  }
+
+  async request(method, endpoint, body = null) {
+    // Implementation with config-based timeout and retries
+  }
+}
+
+export const client = new ZephyrClient(process.env.ZEPHYR_API_KEY);
+```
+
+### 3. Secret Management Services
+
+For production deployments, use dedicated secret management:
+
+```javascript
+// src/config/secrets.js - AWS Secrets Manager example
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
+
+const secretsClient = new SecretsManagerClient({ region: "us-east-1" });
+
+async function getSecret(secretName) {
+  try {
+    const command = new GetSecretValueCommand({ SecretId: secretName });
+    const response = await secretsClient.send(command);
+    return JSON.parse(response.SecretString);
+  } catch (error) {
+    console.error(`Failed to fetch secret ${secretName}:`, error);
+    throw error;
+  }
+}
+
+export async function loadProductionConfig() {
+  const secrets = await getSecret("zephyr/production");
+
+  return {
+    apiKey: secrets.ZEPHYR_API_KEY,
+    webhookSecret: secrets.ZEPHYR_WEBHOOK_SECRET,
+    databaseUrl: secrets.DATABASE_URL,
+    // ... other secrets
+  };
+}
+```
+
+```python
+# Python - HashiCorp Vault example
+import os
+import hvac
+
+def load_secrets():
+    client = hvac.Client(url=os.getenv('VAULT_ADDR'))
+    client.auth.kubernetes.login(os.getenv('VAULT_ROLE'))
+
+    secrets = client.secrets.kv.v2.read_secret_version(
+        path='zephyr/production',
+        mount_point='secret'
+    )
+
+    return secrets['data']['data']
+```
+
+## Environment-Specific API Keys
+
+### Key Permissions by Environment
+
+| Environment | Recommended Permissions | Notes                          |
+| ----------- | ----------------------- | ------------------------------ |
+| Development | All permissions         | For testing full functionality |
+| Staging     | Production-like         | Mimics production restrictions |
+| Production  | Minimal required        | Principle of least privilege   |
+
+```javascript
+// Recommended permission sets
+
+const permissionSets = {
+  // Read-only analytics dashboard
+  analyticsReader: [
+    "products:read",
+    "orders:read",
+    "customers:read",
+    "analytics:read",
+  ],
+
+  // Order processing service
+  orderProcessor: [
+    "products:read",
+    "orders:read",
+    "orders:write",
+    "customers:read",
+    "customers:write",
+  ],
+
+  // Inventory management
+  inventoryManager: [
+    "products:read",
+    "products:write",
+    "inventory:read",
+    "inventory:write",
+  ],
+
+  // Webhook handler (limited write)
+  webhookHandler: ["orders:read", "products:read", "analytics:write"],
+
+  // Full admin (use sparingly)
+  admin: ["*"],
+};
+```
+
+### Rotating API Keys
+
+```javascript
+// src/services/key-rotation.js
+import { client } from "../client.js";
+
+class KeyRotationService {
+  constructor(oldKey, newKey) {
+    this.oldKey = oldKey;
+    this.newKey = newKey;
+    this.client = new ZephyrClient(newKey);
+  }
+
+  /**
+   * Rotate API key with zero downtime
+   * Steps: Create new key -> Update services -> Verify -> Revoke old key
+   */
+  async rotate(gracePeriodHours = 24) {
+    console.log("Starting API key rotation...");
+
+    // Step 1: Verify new key works
+    console.log("Verifying new key...");
+    const testResult = await this.client.get("/products?per_page=1");
+    console.log("New key verified successfully");
+
+    // Step 2: Log rotation timestamp
+    const rotationRecord = {
+      timestamp: new Date().toISOString(),
+      oldKeyPrefix: this.oldKey.substring(0, 10) + "...",
+      newKeyPrefix: this.newKey.substring(0, 10) + "...",
+      gracePeriodHours,
+    };
+
+    // In production, store this in a secure audit log
+    console.log("Key rotation record:", rotationRecord);
+
+    // Step 3: Schedule old key revocation (after grace period)
+    this.scheduleRevocation(gracePeriodHours);
+
+    return rotationRecord;
+  }
+
+  scheduleRevocation(hours) {
+    // In production, use a job scheduler
+    console.log(`
+      Old key will be revoked in ${hours} hours.
+      Before then, you can rollback by updating ZEPHYR_API_KEY back to the old key.
+    `);
+
+    // Example: Schedule with node-cron
+    // cron.schedule(`*/${hours} * * *`, () => this.revokeOldKey());
+  }
+
+  async revokeOldKey() {
+    try {
+      // Revoke the old key via API
+      const oldClient = new ZephyrClient(this.oldKey);
+      await oldClient.delete("/api-keys/self");
+      console.log("Old key revoked successfully");
+    } catch (error) {
+      console.error("Failed to revoke old key:", error.message);
+      // Alert administrators
+    }
+  }
+}
+```
+
+## Managing Multiple Environments
+
+### Environment Detection
+
+```javascript
+// src/environment.js
+export function getEnvironment() {
+  // Check explicit environment variable first
+  if (process.env.ZEPHYR_ENV) {
+    return process.env.ZEPHYR_ENV;
+  }
+
+  // Detect from hostname or URL
+  const hostname = process.env.HOSTNAME || "";
+
+  if (hostname.includes("localhost") || hostname.includes("127.0.0.1")) {
+    return "development";
+  }
+
+  if (hostname.includes("staging") || hostname.includes("test")) {
+    return "staging";
+  }
+
+  if (hostname.includes("production") || hostname.includes("prod")) {
+    return "production";
+  }
+
+  // Default to development
+  return "development";
+}
+
+export function isProduction() {
+  return getEnvironment() === "production";
+}
+
+export function isDevelopment() {
+  return getEnvironment() === "development";
+}
+```
+
+### Environment-Specific Code
+
+```javascript
+// src/services/analytics.js
+import { isProduction } from "../environment.js";
+
+export class AnalyticsService {
+  async trackPurchase(order) {
+    const event = {
+      event_name: "purchase_completed",
+      user_id: order.customer.email,
+      properties: {
+        order_id: order.id,
+        revenue: order.pricing.grand_total,
+      },
+    };
+
+    // In development, log events instead of sending
+    if (!isProduction()) {
+      console.log("[Analytics] Would track:", event);
+      return { simulated: true };
+    }
+
+    return this.client.analytics.track(event);
+  }
+}
+```
+
+## Webhook Environment Configuration
+
+```javascript
+// src/webhooks/environment.js
+export function getWebhookConfig() {
+  const env = getEnvironment();
+
+  const configs = {
+    development: {
+      // Use ngrok URL for local testing
+      url: process.env.WEBHOOK_DEV_URL,
+      secret: process.env.WEBHOOK_DEV_SECRET,
+      // Lower retry count for testing
+      maxRetries: 1,
+      retryDelay: 5000,
+    },
+
+    staging: {
+      // Staging webhook URL
+      url: process.env.WEBHOOK_STAGING_URL,
+      secret: process.env.WEBHOOK_STAGING_SECRET,
+      maxRetries: 2,
+      retryDelay: 30000,
+    },
+
+    production: {
+      // Production webhook URL
+      url: process.env.WEBHOOK_PROD_URL,
+      secret: process.env.WEBHOOK_PROD_SECRET,
+      maxRetries: 3,
+      retryDelay: 60000,
+    },
+  };
+
+  return configs[env];
+}
+```
+
+## Testing Across Environments
+
+### Test Configuration
+
+```javascript
+// jest.setup.js
+beforeAll(() => {
+  // Set test environment
+  process.env.NODE_ENV = "test";
+  process.env.ZEPHYR_API_URL = "https://api-sandbox.zephyr.com/v1";
+  process.env.ZEPHYR_API_KEY = "sk_test_mock_key";
+});
+
+afterAll(() => {
+  // Cleanup
+});
+```
+
+### Integration Tests with Real Environments
+
+```javascript
+// tests/integration/products.test.js
+describe("Products API", () => {
+  const client = new ZephyrClient(process.env.ZEPHYR_API_KEY);
+
+  // Only run in staging or development
+  if (process.env.NODE_ENV === "production") {
+    it.skip("should create a product", () => {
+      // Skip in production
+    });
+  } else {
+    it("should create a product", async () => {
+      const product = await client.post("/products", {
+        name: `Test Product ${Date.now()}`,
+        price: 29.99,
+        status: "draft", // Create as draft to avoid exposing test data
+      });
+
+      expect(product.id).toBeDefined();
+      expect(product.name).toContain("Test Product");
+
+      // Cleanup: Delete the test product
+      await client.delete(`/products/${product.id}`);
+    });
+  }
+});
+```
+
+## Best Practices Checklist
+
+<Callout type="tip">**Security Checklist:**</Callout>
+
+- [ ] Never commit API keys to version control
+- [ ] Use different keys for each environment
+- [ ] Implement principle of least privilege for key permissions
+- [ ] Enable IP whitelisting in production
+- [ ] Set key expiration dates
+- [ ] Implement key rotation every 90 days
+- [ ] Use secret management services in production
+- [ ] Validate all configuration on startup
+- [ ] Log configuration loading (without secrets)
+- [ ] Separate webhook secrets from API keys
+
+## Environment Migration
+
+When migrating between environments:
+
+1. **Backup current configuration**
+2. **Create new environment credentials**
+3. **Update DNS/routing if needed**
+4. **Deploy with new configuration**
+5. **Verify integration works**
+6. **Monitor for 24-48 hours**
+7. **Decommission old environment**
+
+## Next Steps
+
+- [Error Handling Guide](/guides/error-handling) - Handle errors gracefully
+- [Rate Limits Guide](/guides/rate-limits) - Manage API rate limits
+- [Webhook Handler Tutorial](/tutorials/webhook-handler) - Build webhook integrations
+- [First Integration Tutorial](/tutorials/first-integration) - Get started with the API

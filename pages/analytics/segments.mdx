@@ -1,0 +1,239 @@
+---
+title: User Segments
+---
+
+
+Create dynamic user segments based on behaviors, attributes, and events. Segments power targeted campaigns, personalization, and user analytics.
+
+## Segment Definition
+
+```typescript
+interface Segment {
+  id: string;
+  name: string;
+  description: string;
+  rules: SegmentRule[];
+  combinator: "and" | "or";
+  created_at: string;
+  updated_at: string;
+  estimated_size: number;
+}
+
+interface SegmentRule {
+  field: string;
+  operator: "equals" | "contains" | "gt" | "lt" | "between" | "in";
+  value: any;
+}
+```
+
+## Creating Segments
+
+### Rule-based Segments
+
+```python
+segment = client.analytics.create_segment({
+    name: "High Value Customers",
+    description: "Customers with LTV > $500 and recent purchase",
+    rules: [
+        {"field": "total_lifetime_value", "operator": "greater_than", "value": 500},
+        {"field": "days_since_last_purchase", "operator": "less_than", "value": 30},
+        {"field": "orders_count", "operator": "greater_than", "value": 3}
+    ],
+    combinator: "and"
+})
+```
+
+### Event-based Segments
+
+Define segments based on user actions:
+
+```python
+segment = client.analytics.create_segment({
+    name: "Abandoned Cart Users",
+    description: "Users who added to cart but didn't checkout in 7 days",
+    rules: [
+        {"field": "event:add_to_cart", "operator": "exists"},
+        {"field": "event:purchase_completed", "operator": "not_exists", "time_window": "7d"}
+    ],
+    combinator: "and"
+})
+```
+
+### Behavioral Segments
+
+```python
+active_users = client.analytics.create_segment({
+    name: "Active Users - Last 30 Days",
+    rules: [
+        {"field": "last_active_date", "operator": "greater_than", "value": "2026-04-10"}
+    ]
+})
+
+product_viewers = client.analytics.create_segment({
+    name": "Viewed Premium Headphones",
+    rules: [
+        {"field": "event:product_viewed", "operator": "contains", "value": {"product_id": "prod_headphones_001"}}
+    ]
+})
+```
+
+## Segment Operators
+
+| Operator | Description | Example |
+|---|---|---|
+| `equals` | Exact match | `country equals "US"` |
+| `not_equals` | Not equal | `status not_equals "inactive"` |
+| `contains` | String contains | `email contains "@gmail"` |
+| `not_contains` | String excludes | `name not_contains "test"` |
+| `greater_than` | Numeric comparison | `orders_count > 5` |
+| `less_than` | Numeric comparison | `lifetime_value < 100` |
+| `between` | Range inclusive | `age between 18 and 35` |
+| `in` | In list | `country in ["US", "CA", "MX"] |
+| `not_in` | Not in list | `plan not_in ["free", "trial"]` |
+| `exists` | Property exists | `event:purchase_completed exists` |
+| `not_exists` | Property missing | `phone not_exists` |
+
+## Combining Rules
+
+### AND Logic (All conditions)
+
+```python
+premium_power_users = client.analytics.create_segment({
+    name: "Premium Power Users",
+    rules: [
+        {"field": "plan", "operator": "equals", "value": "premium"},
+        {"field": "monthly_active_days", "operator": "greater_than", "value": 20},
+        {"field": "total_purchases", "operator": "greater_than", "value": 10}
+    ],
+    combinator: "and"
+})
+```
+
+### OR Logic (Any condition)
+
+```python
+engaged_visitors = client.analytics.create_segment({
+    name: "Engaged Mobile OR Desktop Users",
+    rules: [
+        {"field": "device_type", "operator": "equals", "value": "mobile"},
+        {"field": "session_duration", "operator": "greater_than", "value": 600}
+    ],
+    combinator: "or"
+})
+```
+
+### Nested Conditions
+
+```python
+segment = client.analytics.create_segment({
+    name: "High Value Mobile Shoppers",
+    rules: [
+        {
+            "group": [
+                {"field": "plan", "operator": "equals", "value": "premium"},
+                {"field": "lifetime_value", "operator": "greater_than", "value": 1000}
+            ]
+        },
+        {
+            "group": [
+                {"field": "device_type", "operator": "equals", "value": "mobile"},
+                {"field": "monthly_sessions", "operator": "greater_than", "value": 15}
+            ]
+        }
+    ],
+    combinator: "or"
+})
+```
+
+## Segment Estimates
+
+### Real-time Size Estimation
+
+Before saving, preview segment size:
+
+```python
+estimate = client.analytics.estimate_segment({
+    rules: [...],
+    combinator: "and"
+})
+```
+
+### Segment Refresh
+
+Segments update in real-time. Force a refresh:
+
+```python
+client.analytics.refresh_segment(segment_id="seg_abc123")
+```
+
+## Using Segments
+
+### Export Segment Users
+
+```python
+users = client.analytics.export_segment(
+    segment_id="seg_abc123",
+    format="csv",
+    include_fields=["user_id", "email", "created_at", "lifetime_value"]
+)
+```
+
+### Segment Analytics
+
+```python
+metrics = client.analytics.segment_metrics(
+    segment_id="seg_abc123",
+    metrics=["revenue", "orders", "sessions"],
+    date_range={"start": "2026-04-01", "end": "2026-04-30"}
+)
+```
+
+### Integration with Marketing Tools
+
+Sync segments to external platforms:
+
+```python
+client.integrations.sync_segment(
+    segment_id="seg_abc123",
+    destination="mailchimp",
+    list_id="mc_list_xyz"
+)
+
+client.integrations.sync_segment(
+    segment_id="seg_abc123",
+    destination="facebook_audience",
+    audience_name="High Value Customers"
+)
+```
+
+## Dynamic vs Static Segments
+
+### Dynamic Segments
+
+Update in real-time as users change:
+
+```python
+dynamic_seg = client.analytics.create_segment({
+    name: "Active Shoppers",
+    rules: [...],
+    type: "dynamic"  # Updates continuously
+})
+```
+
+### Static Segments
+
+Snapshot at creation, manual refresh:
+
+```python
+static_seg = client.analytics.create_segment({
+    name: "Q1 2026 Purchasers",
+    rules: [...],
+    type: "static"  # Snapshot-based
+})
+
+client.analytics.refresh_static_segment(segment_id="seg_static_123")
+```
+
+<Callout type="info">
+  **Static Segment Use Case:** Create static segments for email campaigns where you need a fixed list of recipients for compliance.
+</Callout>

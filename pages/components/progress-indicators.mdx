@@ -1,0 +1,259 @@
+---
+title: Progress Indicators
+description: Various progress and loading state indicators
+---
+
+# Progress Indicators
+
+Visual progress and loading indicators.
+
+## Progress Bar
+
+<div class="progress-container">
+  <div class="progress-header">
+    <span>Upload Progress</span>
+    <span>45%</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" style="width: 45%"></div>
+  </div>
+</div>
+
+## Step Progress
+
+<div class="step-progress">
+  <div class="step-progress-item step-progress-item--completed">
+    <div class="step-progress-marker">✓</div>
+    <div class="step-progress-label">Account</div>
+  </div>
+  <div class="step-progress-item step-progress-item--completed">
+    <div class="step-progress-marker">✓</div>
+    <div class="step-progress-label">API Key</div>
+  </div>
+  <div class="step-progress-item step-progress-item--active">
+    <div class="step-progress-marker">3</div>
+    <div class="step-progress-label">Connect</div>
+  </div>
+  <div class="step-progress-item">
+    <div class="step-progress-marker">4</div>
+    <div class="step-progress-label">Complete</div>
+  </div>
+</div>
+
+## Circular Progress
+
+<div class="circular-progress-container">
+  <div class="circular-progress">
+    <svg viewBox="0 0 36 36">
+      <path class="circular-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+      <path class="circular-fill" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+    </svg>
+    <div class="circular-text">75%</div>
+  </div>
+</div>
+
+## Loading Skeleton
+
+<div class="skeleton-container">
+  <div class="skeleton skeleton--text"></div>
+  <div class="skeleton skeleton--text skeleton--short"></div>
+  <div class="skeleton skeleton--text"></div>
+  <div class="skeleton skeleton--avatar"></div>
+</div>
+
+## Spinner
+
+<div class="spinner-container">
+  <div class="spinner"></div>
+  <span class="spinner-text">Loading...</span>
+</div>
+
+<style>{`
+  .progress-container {
+    margin: 1rem 0;
+    max-width: 400px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: var(--muted);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .step-progress {
+    display: flex;
+    justify-content: space-between;
+    max-width: 400px;
+    margin: 1.5rem 0;
+    position: relative;
+  }
+
+  .step-progress::before {
+    content: "";
+    position: absolute;
+    top: 1rem;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  .step-progress-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1;
+  }
+
+  .step-progress-marker {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--muted);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .step-progress-item--completed .step-progress-marker {
+    background: #166534;
+    border-color: #166534;
+    color: white;
+  }
+
+  .step-progress-item--active .step-progress-marker {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .step-progress-label {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .step-progress-item--active .step-progress-label {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .circular-progress-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+  }
+
+  .circular-progress {
+    position: relative;
+    width: 80px;
+    height: 80px;
+  }
+
+  .circular-progress svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .circular-bg {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 3;
+  }
+
+  .circular-fill {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  .circular-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .skeleton-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    max-width: 300px;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--muted) 25%, var(--accent) 50%, var(--muted) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.25rem;
+  }
+
+  .skeleton--text {
+    height: 1rem;
+  }
+
+  .skeleton--short {
+    width: 60%;
+  }
+
+  .skeleton--avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .spinner-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinner-text {
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+  }
+`}</style>

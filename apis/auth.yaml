@@ -1,0 +1,28 @@
+openapi: 3.0.0
+info:
+  title: Syntara Auth API
+  description: Manage OAuth2 clients, API keys, and SSO integrations.
+  version: 1.0.0
+servers:
+  - url: https://api.auth.syntara.com/v1
+paths:
+  /oauth/token:
+    post:
+      summary: Get an access token
+      operationId: getToken
+      responses:
+        '200':
+          description: Access token returned
+  /api-keys:
+    get:
+      summary: List API keys
+      operationId: listApiKeys
+      responses:
+        '200':
+          description: A list of API keys
+    post:
+      summary: Create a new API key
+      operationId: createApiKey
+      responses:
+        '201':
+          description: Created API key
