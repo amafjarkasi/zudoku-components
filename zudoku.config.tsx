@@ -56,13 +56,26 @@ const config: ZudokuConfig = {
 
       /* Page content header - the one with title, copy button, etc */
       header.flow-root {
-        padding-top: 0.5rem !important;
-        padding-bottom: 1.5rem !important;
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.75rem !important;
+        gap: 0.25rem !important;
       }
 
-      /* Adjust h1 inside page header to have proper spacing */
+      /* Description text in header - add top margin for breathing room */
+      header.flow-root .text-sm {
+        margin-top: 0.25rem !important;
+      }
+
+      /* The page title heading - reduce bottom margin to close gap to hr */
       header.flow-root h1 {
+        margin-bottom: 0.5rem !important;
+      }
+
+      /* Horizontal rule after header - add top margin for spacing below header text */
+      header.flow-root + hr,
+      .zudoku-content > hr:first-child {
         margin-top: 0.5rem !important;
+        margin-bottom: 1.5rem !important;
       }
 
       .dark header.flow-root {
@@ -76,7 +89,11 @@ const config: ZudokuConfig = {
 
       /* Hide the redundant auto-generated title if it duplicates the first H1 */
       /* Zudoku renders the frontmatter title, so we hide the first H1 if we keep the frontmatter */
-      /* Or better: Keep the frontmatter title and remove manual H1s from MDX files */
+      
+      /* Hide the H1 that appears in the article content (duplicate of frontmatter title in header) */
+      article h1 {
+        display: none !important;
+      }
       
       h1 {
         background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 50%, #60a5fa 100%);
