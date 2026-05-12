@@ -1,21 +1,31 @@
 # Zephyr Developer Portal
 
-A comprehensive **Zudoku** documentation site featuring reusable UI components for API documentation platforms. This project demonstrates modern documentation design patterns and serves as a reference implementation for building developer portals with Zudoku.
+![Zephyr Logo](public/logo-readme.svg)
 
-## Overview
+A comprehensive **Zudoku**-powered documentation site for the Syntara API platform — covering E-Commerce, Analytics, and Authentication services. This project serves as both a complete developer portal and a reference implementation for building interactive API documentation with Zudoku.
 
-This is the **Zephyr Developer Portal** — a documentation platform for a premium API service covering E-Commerce, Analytics, and Authentication. Built with [Zudoku](https://zudoku.dev), React, and TypeScript.
+## What This Project Is
+
+The **Zephyr Developer Portal** is a production-ready documentation site that demonstrates how to build engaging developer documentation. It combines interactive API references, structured navigation, and reusable component patterns to create a documentation experience that developers actually want to use.
+
+Key capabilities:
+- **Interactive API Explorer** — OpenAPI 3.0 specs rendered with live example responses, syntax-highlighted JSON, and method badges
+- **30+ UI Components** — Copy-paste ready patterns for feature grids, callout boxes, progress indicators, timelines, and more
+- **Multi-theme Support** — Automatic light/dark mode with violet-to-blue gradient accent colors
+- **MDX Content** — Full Markdown support with custom components for code tabs, alerts, and embedded diagrams
+
+This isn't just documentation — it's the actual developer portal for Syntara's premium API platform, used by developers integrating e-commerce, analytics, and authentication into their applications.
 
 ## Tech Stack
 
-- **Framework**: [Zudoku v0.77.0](https://zudoku.dev) - API Documentation Framework
-- **UI**: React 19+ with TypeScript
-- **Styling**: CSS Variables + Custom CSS (Theme-aware)
-- **Content**: MDX files for documentation
-- **API Specs**: OpenAPI 3.0 (YAML) with example responses
-- **Diagrams**: Mermaid.js
-- **Syntax Highlighting**: Shiki with custom themes
-- **Build**: Static site generation
+- **Framework**: [Zudoku v0.77.0](https://zudoku.dev) — Built on Vite with React 19, optimized for API documentation
+- **UI**: React 19+ with TypeScript — Component-based architecture with full type safety
+- **Styling**: CSS Variables + Custom CSS — Theme-aware design with CSS custom properties
+- **Content**: MDX files — Markdown with JSX components for interactive documentation
+- **API Specs**: OpenAPI 3.0 (YAML) — Complete specs with example responses for every endpoint
+- **Diagrams**: Mermaid.js — Flowcharts, sequence diagrams, and architecture visuals
+- **Syntax Highlighting**: Shiki — Multi-language with custom violet/blue accent themes
+- **Build**: Static site generation — Deploy anywhere, loads fast, no server required
 
 ## Getting Started
 
@@ -23,7 +33,7 @@ This is the **Zephyr Developer Portal** — a documentation platform for a premi
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (http://localhost:3000)
 npm run dev
 
 # Build for production
@@ -32,7 +42,7 @@ npm run build
 # Preview production build
 npm run preview
 
-# Lint code
+# Run linter
 npm run lint
 ```
 
@@ -42,148 +52,223 @@ npm run lint
 zudoku/
 ├── pages/                    # MDX documentation content
 │   ├── introduction.mdx     # Homepage
-│   ├── auth/                # Authentication docs
-│   ├── ecommerce/           # E-Commerce API docs
-│   ├── analytics/          # Analytics API docs
-│   ├── advanced/            # Technical concepts
-│   ├── sdks/               # SDK documentation
-│   ├── integrations/        # Integration guides
-│   ├── best-practices/     # Security, performance
-│   ├── migration/           # Migration guides
-│   ├── tutorials/           # Step-by-step tutorials
-│   ├── guides/             # Configuration guides
-│   ├── examples/           # Example implementations
-│   └── components/          # UI Component Showcase
+│   ├── auth/                # Authentication guides
+│   ├── ecommerce/           # E-Commerce API reference
+│   ├── analytics/           # Analytics API reference
+│   ├── advanced/            # Architecture & rate limiting
+│   ├── sdks/                # SDK setup (React, Python, CLI)
+│   ├── integrations/        # Webhook & payment integrations
+│   ├── best-practices/     # Security & performance guides
+│   ├── migration/           # Migration guides from other platforms
+│   ├── tutorials/           # Step-by-step integration tutorials
+│   ├── guides/             # Environment & error handling
+│   ├── examples/           # Full implementation examples
+│   └── components/          # UI Component Showcase (30+ components)
 ├── apis/                    # OpenAPI 3.0 specifications
-│   ├── ecommerce.yaml       # E-Commerce API
-│   ├── analytics.yaml       # Analytics API
-│   └── auth.yaml            # Authentication API
-├── public/                  # Static assets
-│   ├── logo-*.svg          # Logo variants (Zephyr branding)
+│   ├── ecommerce.yaml       # Products, Orders, Cart, Inventory
+│   ├── analytics.yaml       # Events, Metrics, Funnels, Segments, Dashboards
+│   └── auth.yaml            # OAuth2, API Keys, SSO Providers
+├── public/
+│   ├── screenshots/        # Component showcase screenshots
+│   ├── logo-*.svg          # Zephyr branding (light/dark variants)
 │   ├── favicon.svg         # Diamond favicon
-│   └── components.css      # Component styles
-├── zudoku.config.tsx       # Central configuration
+│   └── components.css      # Component-specific styles
+├── zudoku.config.tsx       # Theme, navigation, API mappings, metadata
 ├── package.json
-├── tsconfig.json
-├── .eslintrc.json
-├── .gitignore
 └── README.md
 ```
 
 ## Screenshots
 
-> Note: Screenshots have been removed as the referenced external repository is no longer available. Please run the project locally with `npm run dev` to see the documentation site.
+### Components Overview
+![Components Overview](public/screenshots/components-overview.png)
 
-### Running Locally
-```bash
-npm install
-npm run dev
-# Open http://localhost:3000
-```
+### Feature Cards
+![Feature Cards](public/screenshots/feature-cards.png)
+
+### Integration Showcase
+![Integration Showcase](public/screenshots/integration-showcase.png)
+
+### Status Page
+![Status Page](public/screenshots/status-page.png)
+
+### Changelog Timeline
+![Changelog](public/screenshots/changelog.png)
+
+### Breadcrumb Navigation
+![Breadcrumb](public/screenshots/breadcrumb.png)
+
+### Table of Contents
+![Table of Contents](public/screenshots/table-of-contents.png)
+
+### Auth Flows
+![Auth Flows](public/screenshots/auth-flows.png)
+
+### Broken Components Reference
+![Broken Components](public/screenshots/broken-components.png)
+
+### Review Feature Cards
+![Review Feature Cards](public/screenshots/review-feature-cards.png)
 
 ## Component Library
 
-This project includes **30+ reusable UI components** for API documentation sites. Browse them under `pages/components/`:
+This project includes **30+ reusable UI components** for API documentation sites. Each component is documented and live in `pages/components/`.
 
 ### Interactive Components
 | Component | Description |
 |-----------|-------------|
-| `feature-cards` | Visual grid of feature categories with icons |
-| `feature-checklist` | Visual checklist with supported/coming badges |
-| `video-tutorials` | Video card grid with thumbnails |
+| `feature-cards` | Grid layout with icons, descriptions, and links |
+| `feature-checklist` | Checklist with supported/coming badges |
+| `video-tutorials` | Video card grid with play buttons and duration |
 | `page-feedback` | "Was this page helpful?" thumbs up/down |
-| `integration-showcase` | Logo grid of supported integrations |
+| `integration-showcase` | Logo grid for supported integrations |
 | `sdk-comparison` | SDK matrix with installation commands |
+| `badge-row` | Inline badges for features/tags |
 
 ### Navigation Components
 | Component | Description |
 |-----------|-------------|
-| `table-of-contents` | In-page anchor navigation with active states |
-| `breadcrumb` | Hierarchical path display |
-| `prev-next-nav` | Previous/next page navigation links |
-| `version-selector` | API version dropdown selector |
-| `sidebar-navigation` | Collapsible sidebar menu sections |
+| `table-of-contents` | In-page anchor nav with active state highlighting |
+| `breadcrumb` | Hierarchical path display (Home > Category > Page) |
+| `prev-next-nav` | Previous/next page navigation with titles |
+| `version-selector` | API version dropdown with NEW/BETA/DEPRECATED tags |
+| `sidebar-navigation` | Collapsible sidebar sections |
+| `breadcrumb-nav` | Breadcrumb with styled separators |
 
 ### Content Components
 | Component | Description |
 |-----------|-------------|
-| `community-links` | Discord/GitHub/Twitter banner |
-| `support-section` | Support tier cards (Community/Pro/Enterprise) |
-| `changelog` | Timeline of updates with badges |
+| `community-links` | Discord, GitHub, Twitter link banner |
+| `support-section` | Community/Pro/Enterprise pricing cards |
+| `changelog` | Timeline with version badges and dates |
 | `status-page` | API health dashboard with uptime metrics |
-| `auth-flows` | OAuth2/JWT flow diagrams |
-| `rate-limit-indicator` | Visual progress bar for rate limits |
+| `auth-flows` | OAuth2/JWT flow step diagrams |
+| `rate-limit-indicator` | Visual progress bar with countdown |
+| `step-progress` | Multi-step progress tracker |
+| `metrics-grid` | Metric cards with large numbers |
 
 ### UI Elements
 | Component | Description |
 |-----------|-------------|
-| `api-parameter-table` | Parameter reference tables |
-| `search-component` | Search UI patterns |
-| `alert-banner` | Dismissible notification banners |
-| `announcement-bar` | Site-wide announcement banners |
-| `badges-tags` | Labels, method badges, and tags |
-| `callout-box` | Styled info/warning/danger boxes |
+| `api-parameter-table` | Parameter reference with type, required, description |
+| `api-parameter-table` | Full HTTP endpoint documentation |
+| `search-component` | Search box with keyboard shortcut hints |
+| `alert-banner` | Dismissible info/warning/success/error banners |
+| `announcement-bar` | Site-wide announcement with gradient background |
+| `callout-box` | Styled info/tip/warning/danger boxes |
 | `card-grid` | Responsive card layouts |
-| `progress-indicators` | Progress bars, spinners, skeletons |
-| `timeline` | Chronological sequences |
+| `progress-indicators` | Progress bars, spinners, skeleton loaders |
+| `timeline` | Chronological event sequences |
 | `image-lightbox` | Expandable image gallery |
+| `method-badge` | GET/POST/PUT/PATCH/DELETE method badges |
 
 ## Features
 
 ### Theme System
-- **Light Mode**: Clean violet accent with `#7c3aed` primary → `#3b82f6` blue gradient
-- **Dark Mode**: Adjusted palette with `#a78bfa` primary → `#60a5fa` blue gradient
-- **Typography**: Inter (sans-serif), Fira Code (monospace)
-- **CSS Variables**: All colors and spacing via custom properties
 
-### Custom CSS Components
-The `zudoku.config.tsx` and `public/components.css` include custom CSS for:
-- Logo styling (`.zephyr-logo` classes with gradient diamond icon)
-- Copy button for code blocks (CSS-only, no JavaScript)
-- Multi-language code tabs with localStorage persistence
-- API endpoint method badges (GET/POST/PUT/DELETE/PATCH)
-- Rate limit visualization with progress bars
-- Tutorial progress tracker with step indicators
-- Mermaid diagram styling
-- Alert banners, callout boxes, page banners
+The Zephyr design system uses a violet-to-blue gradient accent:
+
+**Light Mode:**
+- Primary: `#7c3aed` (violet)
+- Secondary: `#6366f1` (indigo)
+- Accent: `#3b82f6` (blue)
+
+**Dark Mode:**
+- Primary: `#a78bfa` (lighter violet)
+- Secondary: `#818cf8` (lighter indigo)
+- Accent: `#60a5fa` (lighter blue)
+
+Typography uses **Inter** for UI text and **Fira Code** for code blocks. All colors are exposed as CSS custom properties for consistent theming.
 
 ### Code Block Styling
-- Premium code blocks with left border accent
-- Internal code padding: `1.25rem 1.5rem 1.25rem 1rem` (top/right/bottom/left)
-- Line height: `1.05` for optimal density
-- Syntax highlighting with saturation boost (`saturate(1.4) contrast(1.05)`)
+
+Premium code blocks with enhanced visual hierarchy:
+
+```css
+pre code {
+  padding: 1.25rem 1.5rem 1.25rem 1rem;  /* top right bottom left */
+  line-height: 1.05;
+  background: transparent;
+}
+```
+
+Features:
+- Left border accent (primary color)
+- Syntax highlighting with boosted saturation and contrast
+- CSS-only copy button (appears on hover)
+- Language label display
 
 ### API Documentation
-- OpenAPI 3.0 specs with complete example responses
-- Syntax-highlighted JSON code blocks for each endpoint
-- Interactive API reference pages at `/api/ecommerce`, `/api/analytics`, `/api/auth`
 
-### Brand Identity
-- **Zephyr** brand with stylized diamond/gem icon
-- Violet → Indigo → Blue gradient color scheme
-- Custom SVG logos for light/dark modes
+Every endpoint includes:
+- OpenAPI 3.0 spec with complete schema definitions
+- Example request bodies with realistic data
+- Example response bodies with syntax highlighting
+- HTTP method badges (GET = green, POST = blue, etc.)
+
+Example endpoints documented:
+- **E-Commerce**: Products CRUD, Orders, Cart, Inventory
+- **Analytics**: Event tracking, Metrics, Funnels, Segments, Dashboards
+- **Authentication**: OAuth2 tokens, API keys, SSO providers
+
+### Component CSS Patterns
+
+Custom styles in `public/components.css` with `!important` overrides for:
+- Alert banners with icon, title, description, and action buttons
+- Feature cards with hover effects and gradient borders
+- Callout boxes with type-specific colors
+- Video tutorial grids with thumbnail placeholders
+- Progress indicators with animated skeletons
+- Breadcrumb navigation with styled separators
+- Prev/next navigation with hover effects
+- Table of contents with active state highlighting
+
+### Copy Button for Code Blocks
+
+CSS-only implementation using checkbox hack:
+- Hidden on idle, appears on `pre:hover`
+- Shows clipboard icon on hover
+- Shows checkmark when clicked
+- No JavaScript required
+
+### Multi-Language Code Tabs
+
+Tabbed interface for showing same code in multiple languages:
+- Pure CSS implementation
+- LocalStorage persistence for preferred language
+- Fade animation on tab switch
 
 ## Configuration
 
-The `zudoku.config.tsx` file controls:
+The `zudoku.config.tsx` file is the single source of truth:
 
 ```typescript
-// Theme colors
-theme.light.primary   // #7c3aed (violet)
-theme.light.secondary // #6366f1 (indigo)
-theme.light.accent    // #3b82f6 (blue)
-
-// Site branding
-site.logo: {
-  src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
-  width: "280px"
+// Theme configuration
+theme: {
+  light: { primary: "#7c3aed", ... },
+  dark: { primary: "#a78bfa", ... },
+  fonts: { sans: "Inter", mono: "Fira Code" }
 }
 
-// Navigation structure
-navigation: [...]    // Sidebar menu items
+// Site branding
+site: {
+  logo: {
+    src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
+    alt: "Zephyr",
+    width: "280px"
+  }
+}
 
-// API mappings
-apis: [...]          // OpenAPI file → URL route
+// Navigation tree
+navigation: [
+  { type: "category", label: "Getting Started", items: [...] },
+  { type: "link", to: "/api/ecommerce", label: "API Reference" }
+]
+
+// API spec mappings
+apis: [
+  { type: "file", input: "./apis/ecommerce.yaml", path: "/api/ecommerce" }
+]
 
 // Site metadata
 metadata: {
@@ -195,82 +280,110 @@ metadata: {
 ## Content Patterns
 
 ### MDX Frontmatter
+
 ```yaml
 ---
 title: Page Title
-description: Optional description
+description: Optional SEO description
 ---
 ```
 
-### Callout Usage
+### Callout Boxes
+
 ```mdx
 <Callout type="info">
-**Info:** Informational content
+**Info:** Your information message here.
 </Callout>
 
 <Callout type="tip">
-**Tip:** Helpful suggestion
+**Tip:** A helpful suggestion.
 </Callout>
 
 <Callout type="warning">
-**Warning:** Important warning
+**Warning:** Something to be careful about.
 </Callout>
 
 <Callout type="danger">
-**Danger:** Critical security warning
+**Danger:** Critical action required.
 </Callout>
 ```
 
-### Code Blocks
+### Code Blocks with Language
+
 ````mdx
 ```typescript
-// TypeScript code
-const client = new ZephyrClient({ apiKey: '...' });
+const client = new ZephyrClient({
+  apiKey: process.env.ZEPHYR_API_KEY
+});
+```
+
+```python
+from zephyr import Client
+client = Client(api_key="your-api-key")
+```
+
+```bash
+curl -X GET https://api.zephyr.dev/v1/products \
+  -H "Authorization: Bearer $ZEPHYR_API_KEY"
 ```
 ````
 
+### API Endpoint Display
+
+Method badges are styled inline:
+- `GET` — Green badge
+- `POST` — Blue badge
+- `PUT` — Yellow badge
+- `PATCH` — Purple badge
+- `DELETE` — Red badge
+
 ## Development
 
-### Adding New Components
+### Adding a New Component
 
-1. Create MDX file in `pages/components/`
-2. Add to navigation in `zudoku.config.tsx`
-3. Test with `npm run dev`
-
-### Adding Content Pages
-
-1. Create MDX file in appropriate `pages/` subdirectory
+1. Create `pages/components/my-component.mdx`
 2. Add frontmatter with `title`
-3. Add navigation path in `zudoku.config.tsx`
+3. Write content with MDX and custom classes
+4. Add to navigation in `zudoku.config.tsx` under Components category
+5. Test with `npm run dev`
 
-### API Documentation
+### Adding a Content Page
 
-1. Add OpenAPI YAML to `apis/` directory
-2. Include `example` fields in response schemas for syntax-highlighted code blocks
-3. Map to URL route in `zudoku.config.tsx` `apis` array
+1. Create `pages/category/page-name.mdx`
+2. Add frontmatter `title` (required)
+3. Write content in MDX
+4. Add path to navigation in `zudoku.config.tsx`
+5. Test with `npm run dev`
+
+### Adding API Documentation
+
+1. Create or update OpenAPI YAML in `apis/`
+2. Ensure each response has an `example` object for syntax highlighting
+3. Add mapping in `zudoku.config.tsx` under `apis` array
+4. Add navigation link if needed
 
 ## Deployment
 
-The build output in `/dist/` is a complete static site:
+Build produces a complete static site in `/dist/`:
 
 ```bash
-npm run build    # Build to dist/
-npm run preview  # Preview build locally
+npm run build    # Outputs to dist/
+npm run preview   # Preview at localhost:3000
 ```
 
 Deploy to any static host:
-- Vercel
-- Netlify
-- Cloudflare Pages
-- GitHub Pages
-- Any web server
+- **Vercel** — `vercel --prod`
+- **Netlify** — Drag dist/ folder
+- **Cloudflare Pages** — Connect GitHub repo
+- **GitHub Pages** — Push to gh-pages branch
+- **Any web server** — Serve the dist/ folder
 
 ## Resources
 
-- [Zudoku Documentation](https://zudoku.dev/docs)
-- [OpenAPI 3.0 Specification](https://swagger.io/specification/)
-- [MDX Documentation](https://mdxjs.com/)
-- [Mermaid Diagrams](https://mermaid.js.org/)
+- [Zudoku Documentation](https://zudoku.dev/docs) — Official docs and guides
+- [OpenAPI 3.0 Specification](https://swagger.io/specification/) — API spec standard
+- [MDX Documentation](https://mdxjs.com/) — Markdown with JSX
+- [Mermaid Diagrams](https://mermaid.js.org/) — Diagrams as code
 
 ## License
 
