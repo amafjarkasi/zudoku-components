@@ -1,11 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" fill="none">
   <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
     <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#7c3aed"/>
       <stop offset="50%" stop-color="#6366f1"/>
       <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
   </defs>
-  <text x="0" y="40" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="36" font-weight="800" fill="url(#textGrad)" letter-spacing="-0.03em">Zephyr</text>
-  <text x="0" y="62" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="13" font-weight="400" fill="#71717a" letter-spacing="0.02em">Developer Portal</text>
+  <!-- Icon: stylized Z with wind streams -->
+  <g transform="translate(4, 6)">
+    <!-- Main Z shape -->
+    <path d="M8 8 L52 8 L52 14 L20 56 L52 56 L52 62 L8 62 L8 56 L40 14 L8 14 Z" fill="url(#iconGrad)"/>
+    <!-- Wind stream accents -->
+    <path d="M58 20 Q68 16, 64 24 Q60 32, 70 28" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <path d="M56 36 Q66 32, 62 40 Q58 48, 68 44" stroke="#6366f1" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>
+    <path d="M58 50 Q65 48, 63 52" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="80" y="46" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="38" font-weight="800" fill="url(#textGrad)" letter-spacing="-0.03em">Zephyr</text>
+  <text x="80" y="66" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#71717a" letter-spacing="0.06em">DEVELOPER PORTAL</text>
 </svg>
