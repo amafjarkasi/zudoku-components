@@ -1,7 +1,5 @@
 # Zephyr Developer Portal
 
-![Zephyr Logo](logo.png)
-
 A comprehensive **Zudoku**-powered documentation site for the Syntara API platform — covering E-Commerce, Analytics, and Authentication services. This project serves as both a complete developer portal and a reference implementation for building interactive API documentation with Zudoku.
 
 ## What This Project Is
@@ -80,35 +78,7 @@ zudoku/
 
 ## Screenshots
 
-### Components Overview
-![Components Overview](public/screenshots/components-overview.png)
-
-### Feature Cards
-![Feature Cards](public/screenshots/feature-cards.png)
-
-### Integration Showcase
-![Integration Showcase](public/screenshots/integration-showcase.png)
-
-### Status Page
-![Status Page](public/screenshots/status-page.png)
-
-### Changelog Timeline
-![Changelog](public/screenshots/changelog.png)
-
-### Breadcrumb Navigation
-![Breadcrumb](public/screenshots/breadcrumb.png)
-
-### Table of Contents
-![Table of Contents](public/screenshots/table-of-contents.png)
-
-### Auth Flows
-![Auth Flows](public/screenshots/auth-flows.png)
-
-### Broken Components Reference
-![Broken Components](public/screenshots/broken-components.png)
-
-### Review Feature Cards
-![Review Feature Cards](public/screenshots/review-feature-cards.png)
+Run `npm run dev` and open http://localhost:3000 to see the full documentation site.
 
 ## Component Library
 

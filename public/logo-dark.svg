@@ -1,18 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" fill="none">
   <defs>
-    <linearGradient id="zephGradDark" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="textGradDark" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#a78bfa"/>
       <stop offset="50%" stop-color="#818cf8"/>
       <stop offset="100%" stop-color="#60a5fa"/>
     </linearGradient>
-    <linearGradient id="zephAccentDark" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#c4b5fd"/>
-      <stop offset="100%" stop-color="#93c5fd"/>
-    </linearGradient>
   </defs>
-  <!-- Stylized diamond/gem shape -->
-  <path d="M24 10 L42 30 L24 50 L6 30 Z" stroke="url(#zephAccentDark)" stroke-width="3" stroke-linejoin="round" fill="none"/>
-  <path d="M24 18 L34 30 L24 42 L14 30 Z" fill="url(#zephGradDark)" opacity="0.3"/>
-  <!-- Zephyr text -->
-  <text x="52" y="44" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="36" font-weight="800" fill="url(#zephGradDark)" letter-spacing="-0.04em">Zephyr</text>
+  <text x="0" y="40" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="36" font-weight="800" fill="url(#textGradDark)" letter-spacing="-0.03em">Zephyr</text>
+  <text x="0" y="62" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="13" font-weight="400" fill="#a1a1aa" letter-spacing="0.02em">Developer Portal</text>
 </svg>
