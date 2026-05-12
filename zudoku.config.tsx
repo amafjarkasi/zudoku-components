@@ -953,7 +953,7 @@ const config: ZudokuConfig = {
     logo: {
       src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
       alt: "Zephyr",
-      width: "120px",
+      width: "280px",
     },
   },
   navigation: [
