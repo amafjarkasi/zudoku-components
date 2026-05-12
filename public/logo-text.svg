@@ -1,9 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
   <defs>
-    <linearGradient id="zuGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="zephGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#7c3aed"/>
       <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
+    <linearGradient id="zephAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
   </defs>
-  <text x="0" y="26" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="26" font-weight="800" fill="url(#zuGrad)" letter-spacing="-0.04em">Zu</text>
+  <!-- Stylized diamond/gem shape -->
+  <path d="M14 4 L24 16 L14 28 L4 16 Z" stroke="url(#zephAccent)" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  <path d="M14 9 L19 16 L14 23 L9 16 Z" fill="url(#zephGrad)" opacity="0.35"/>
+  <!-- Zephyr text -->
+  <text x="28" y="24" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="url(#zephGrad)" letter-spacing="-0.04em">Zephyr</text>
 </svg>

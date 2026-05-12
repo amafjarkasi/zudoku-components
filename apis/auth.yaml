@@ -10,19 +10,284 @@ paths:
     post:
       summary: Get an access token
       operationId: getToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              grant_type: "client_credentials"
+              client_id: "client_7k2p9m4x"
+              client_secret: "sk_live_a1b2c3d4e5f6g7h8"
+              scope: "read write"
       responses:
         '200':
           description: Access token returned
+          content:
+            application/json:
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbGllbnRfN2sydDl4Iiwic2NvcGUiOiJyZWFkIHdyaXRlIiwiaWF0IjoxNjg0MTkyMDAwfQ.dGVzdF9zaWduYXR1cmU"
+                token_type: "Bearer"
+                expires_in: 3600
+                scope: "read write"
+    delete:
+      summary: Revoke an access token
+      operationId: revokeToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token revoked
+          content:
+            application/json:
+              example:
+                success: true
+                revoked_at: "2026-05-11T14:30:00Z"
   /api-keys:
     get:
       summary: List API keys
       operationId: listApiKeys
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            example: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            example: 0
       responses:
         '200':
           description: A list of API keys
+          content:
+            application/json:
+              example:
+                keys:
+                  - id: "key_9m3k2p5x"
+                    name: "Production API Key"
+                    prefix: "sk_live"
+                    created_at: "2026-03-15T10:30:00Z"
+                    last_used: "2026-05-11T14:25:00Z"
+                    permissions:
+                      - read
+                      - write
+                  - id: "key_7p1m4k8n"
+                    name: "Development Key"
+                    prefix: "sk_test"
+                    created_at: "2026-04-20T09:00:00Z"
+                    last_used: "2026-05-10T16:45:00Z"
+                    permissions:
+                      - read
+                total: 2
     post:
       summary: Create a new API key
       operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "CI/CD Pipeline Key"
+              permissions:
+                - read
+                - write
+              expires_at: "2027-01-01T00:00:00Z"
       responses:
         '201':
           description: Created API key
+          content:
+            application/json:
+              example:
+                id: "key_new8x4p2m"
+                name: "CI/CD Pipeline Key"
+                secret: "sk_live_a1b2c3d4e5f6g7h8i9j0"
+                prefix: "sk_live"
+                created_at: "2026-05-11T14:30:00Z"
+                expires_at: "2027-01-01T00:00:00Z"
+                permissions:
+                  - read
+                  - write
+                warning: "This secret will only be shown once. Store it securely."
+  /api-keys/{id}:
+    get:
+      summary: Get API key details
+      operationId: getApiKey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "key_9m3k2p5x"
+      responses:
+        '200':
+          description: API key details
+          content:
+            application/json:
+              example:
+                id: "key_9m3k2p5x"
+                name: "Production API Key"
+                prefix: "sk_live"
+                created_at: "2026-03-15T10:30:00Z"
+                last_used: "2026-05-11T14:25:00Z"
+                permissions:
+                  - read
+                  - write
+                rate_limit: 1000
+                rate_limit_window: "1m"
+    delete:
+      summary: Delete an API key
+      operationId: deleteApiKey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "key_7p1m4k8n"
+      responses:
+        '200':
+          description: API key deleted
+          content:
+            application/json:
+              example:
+                id: "key_7p1m4k8n"
+                deleted: true
+                deleted_at: "2026-05-11T14:35:00Z"
+  /oauth/clients:
+    get:
+      summary: List OAuth clients
+      operationId: listOAuthClients
+      responses:
+        '200':
+          description: OAuth client list
+          content:
+            application/json:
+              example:
+                clients:
+                  - id: "client_4p9m2k7x"
+                    name: "Mobile App"
+                    type: "public"
+                    redirect_uris:
+                      - "myapp://callback"
+                    scopes:
+                      - read
+                      - write
+                    created_at: "2026-01-20T11:00:00Z"
+                total: 1
+    post:
+      summary: Create OAuth client
+      operationId: createOAuthClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Web Dashboard"
+              type: "confidential"
+              redirect_uris:
+                - "https://dashboard.example.com/oauth/callback"
+              scopes:
+                - read
+                - write
+                - admin
+      responses:
+        '201':
+          description: OAuth client created
+          content:
+            application/json:
+              example:
+                id: "client_new5x8p1m"
+                name: "Web Dashboard"
+                type: "confidential"
+                client_secret: "cs_live_a1b2c3d4e5f6g7h8"
+                redirect_uris:
+                  - "https://dashboard.example.com/oauth/callback"
+                scopes:
+                  - read
+                  - write
+                  - admin
+                created_at: "2026-05-11T14:40:00Z"
+  /sso/providers:
+    get:
+      summary: List SSO providers
+      operationId: listSsoProviders
+      responses:
+        '200':
+          description: SSO provider list
+          content:
+            application/json:
+              example:
+                providers:
+                  - id: "sso_8k3p2m9x"
+                    name: "Okta"
+                    type: "saml2"
+                    status: "active"
+                    domain: "example.com"
+                    synced_at: "2026-05-11T10:00:00Z"
+                  - id: "sso_1m5k8p3n"
+                    name: "Azure AD"
+                    type: "oidc"
+                    status: "active"
+                    domain: "company.onmicrosoft.com"
+                    synced_at: "2026-05-11T10:00:00Z"
+                total: 2
+components:
+  schemas:
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "key_9m3k2p5x"
+        name:
+          type: string
+          example: "Production API Key"
+        prefix:
+          type: string
+          example: "sk_live"
+        secret:
+          type: string
+          example: "sk_live_a1b2c3d4e5f6g7h8"
+        created_at:
+          type: string
+          format: date-time
+        last_used:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, write, admin]
+    OAuthClient:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [public, confidential]
+        client_secret:
+          type: string
+        redirect_uris:
+          type: array
+          items:
+            type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time

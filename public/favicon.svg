@@ -4,8 +4,12 @@
       <stop offset="0%" stop-color="#7c3aed"/>
       <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
+    <linearGradient id="zephAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
   </defs>
-  <!-- Stylized Z icon -->
-  <path d="M6 8 L14 8 L10 16 L18 16" stroke="url(#zephGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <circle cx="22" cy="11" r="2" fill="#3b82f6" opacity="0.8"/>
+  <!-- Stylized diamond/gem shape -->
+  <path d="M16 6 L26 16 L16 26 L6 16 Z" stroke="url(#zephAccent)" stroke-width="2" stroke-linejoin="round" fill="none"/>
+  <path d="M16 10 L22 16 L16 22 L10 16 Z" fill="url(#zephGrad)" opacity="0.35"/>
 </svg>

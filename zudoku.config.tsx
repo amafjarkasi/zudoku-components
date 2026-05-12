@@ -155,10 +155,10 @@ const config: ZudokuConfig = {
 
       pre code {
         background: transparent !important;
-        padding: 1rem 1rem 1rem 0.85rem !important;
+        padding: 1.25rem 1.5rem 1.25rem 1rem !important;
         display: block !important;
         width: 100% !important;
-        line-height: 1.1 !important;
+        line-height: 1.05 !important;
       }
 
       .sidebar-item {

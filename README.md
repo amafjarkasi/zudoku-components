@@ -1,10 +1,10 @@
-# ZuDocs UI Component Showcase
+# Zephyr Developer Portal
 
 A comprehensive **Zudoku** documentation site featuring reusable UI components for API documentation platforms. This project demonstrates modern documentation design patterns and serves as a reference implementation for building developer portals with Zudoku.
 
 ## Overview
 
-This is the **Zu Developer Portal** — a documentation platform for a premium API service covering E-Commerce, Analytics, and Authentication. Built with [Zudoku](https://zudoku.dev), React, and TypeScript.
+This is the **Zephyr Developer Portal** — a documentation platform for a premium API service covering E-Commerce, Analytics, and Authentication. Built with [Zudoku](https://zudoku.dev), React, and TypeScript.
 
 ## Tech Stack
 
@@ -12,7 +12,7 @@ This is the **Zu Developer Portal** — a documentation platform for a premium A
 - **UI**: React 19+ with TypeScript
 - **Styling**: CSS Variables + Custom CSS (Theme-aware)
 - **Content**: MDX files for documentation
-- **API Specs**: OpenAPI 3.0 (YAML)
+- **API Specs**: OpenAPI 3.0 (YAML) with example responses
 - **Diagrams**: Mermaid.js
 - **Syntax Highlighting**: Shiki with custom themes
 - **Build**: Static site generation
@@ -59,8 +59,9 @@ zudoku/
 │   ├── analytics.yaml       # Analytics API
 │   └── auth.yaml            # Authentication API
 ├── public/                  # Static assets
-│   ├── logo-*.svg          # Logo variants
-│   └── banner.svg          # Hero banner
+│   ├── logo-*.svg          # Logo variants (Zephyr branding)
+│   ├── favicon.svg         # Diamond favicon
+│   └── components.css      # Component styles
 ├── zudoku.config.tsx       # Central configuration
 ├── package.json
 ├── tsconfig.json
@@ -71,24 +72,14 @@ zudoku/
 
 ## Screenshots
 
-### UI Component Showcase
-![UI Components Overview](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/components-overview.png)
+> Note: Screenshots have been removed as the referenced external repository is no longer available. Please run the project locally with `npm run dev` to see the documentation site.
 
-### Interactive Components
-![Feature Cards](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/feature-cards.png)
-![Integration Showcase](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/integration-showcase.png)
-
-### Navigation Components
-![Table of Contents](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/table-of-contents.png)
-![Breadcrumb Navigation](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/breadcrumb.png)
-
-### Content Components
-![Status Page](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/status-page.png)
-![Changelog Timeline](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/changelog.png)
-
-### API Documentation
-![API Parameters Table](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/api-parameters.png)
-![Code Examples](https://raw.githubusercontent.com/amafjarkasi/zudoku-components/main/public/screenshots/code-examples.png)
+### Running Locally
+```bash
+npm install
+npm run dev
+# Open http://localhost:3000
+```
 
 ## Component Library
 
@@ -140,30 +131,37 @@ This project includes **30+ reusable UI components** for API documentation sites
 ## Features
 
 ### Theme System
-- **Light Mode**: Clean violet accent with `#7c3aed` primary
-- **Dark Mode**: Adjusted palette with `#a78bfa` primary
+- **Light Mode**: Clean violet accent with `#7c3aed` primary → `#3b82f6` blue gradient
+- **Dark Mode**: Adjusted palette with `#a78bfa` primary → `#60a5fa` blue gradient
 - **Typography**: Inter (sans-serif), Fira Code (monospace)
 - **CSS Variables**: All colors and spacing via custom properties
 
 ### Custom CSS Components
-The `zudoku.config.tsx` includes custom CSS for:
-- Logo styling (`.zu-logo` classes)
-- Copy button for code blocks
-- Multi-language code tabs
+The `zudoku.config.tsx` and `public/components.css` include custom CSS for:
+- Logo styling (`.zephyr-logo` classes with gradient diamond icon)
+- Copy button for code blocks (CSS-only, no JavaScript)
+- Multi-language code tabs with localStorage persistence
 - API endpoint method badges (GET/POST/PUT/DELETE/PATCH)
-- Rate limit visualization
-- Tutorial progress tracker
+- Rate limit visualization with progress bars
+- Tutorial progress tracker with step indicators
 - Mermaid diagram styling
+- Alert banners, callout boxes, page banners
 
-### Code Highlighting
-Extended syntax highlighting for:
-- JavaScript/TypeScript
-- Python
-- Go
-- Bash/cURL
-- JSON
-- HTTP requests
-- Diff (powershell)
+### Code Block Styling
+- Premium code blocks with left border accent
+- Internal code padding: `1.25rem 1.5rem 1.25rem 1rem` (top/right/bottom/left)
+- Line height: `1.05` for optimal density
+- Syntax highlighting with saturation boost (`saturate(1.4) contrast(1.05)`)
+
+### API Documentation
+- OpenAPI 3.0 specs with complete example responses
+- Syntax-highlighted JSON code blocks for each endpoint
+- Interactive API reference pages at `/api/ecommerce`, `/api/analytics`, `/api/auth`
+
+### Brand Identity
+- **Zephyr** brand with stylized diamond/gem icon
+- Violet → Indigo → Blue gradient color scheme
+- Custom SVG logos for light/dark modes
 
 ## Configuration
 
@@ -171,8 +169,15 @@ The `zudoku.config.tsx` file controls:
 
 ```typescript
 // Theme colors
-theme.light.primary   // #7c3aed
-theme.dark.primary   // #a78bfa
+theme.light.primary   // #7c3aed (violet)
+theme.light.secondary // #6366f1 (indigo)
+theme.light.accent    // #3b82f6 (blue)
+
+// Site branding
+site.logo: {
+  src: { light: "/logo-text-light.svg", dark: "/logo-text-dark.svg" },
+  width: "280px"
+}
 
 // Navigation structure
 navigation: [...]    // Sidebar menu items
@@ -182,7 +187,7 @@ apis: [...]          // OpenAPI file → URL route
 
 // Site metadata
 metadata: {
-  title: "Zu Developer Portal",
+  title: "Zephyr Developer Portal",
   description: "..."
 }
 ```
@@ -220,7 +225,7 @@ description: Optional description
 ````mdx
 ```typescript
 // TypeScript code
-const client = new ZuClient({ apiKey: '...' });
+const client = new ZephyrClient({ apiKey: '...' });
 ```
 ````
 
@@ -241,7 +246,8 @@ const client = new ZuClient({ apiKey: '...' });
 ### API Documentation
 
 1. Add OpenAPI YAML to `apis/` directory
-2. Map to URL route in `zudoku.config.tsx` `apis` array
+2. Include `example` fields in response schemas for syntax-highlighted code blocks
+3. Map to URL route in `zudoku.config.tsx` `apis` array
 
 ## Deployment
 

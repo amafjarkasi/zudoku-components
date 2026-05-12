@@ -14,11 +14,68 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Event'
+            example:
+              event: "page_view"
+              timestamp: "2026-05-11T14:30:00Z"
+              properties:
+                url: "/products/premium-widget"
+                referrer: "https://google.com"
+                sessionId: "sess_9k2m4p7x"
+                userId: "user_8n3k1p5m"
       responses:
         '202':
           description: Event accepted
+          content:
+            application/json:
+              example:
+                success: true
+                eventId: "evt_3k7p9m2x"
+                message: "Event queued for processing"
+    get:
+      summary: Query tracked events
+      operationId: queryEvents
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-05-01"
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-05-11"
+        - name: event
+          in: query
+          schema:
+            type: string
+          example: "page_view"
+      responses:
+        '200':
+          description: Events list
+          content:
+            application/json:
+              example:
+                events:
+                  - id: "evt_3k7p9m2x"
+                    event: "page_view"
+                    timestamp: "2026-05-11T14:30:00Z"
+                    properties:
+                      url: "/products/premium-widget"
+                      referrer: "https://google.com"
+                      sessionId: "sess_9k2m4p7x"
+                  - id: "evt_7p2k4m8x"
+                    event: "button_click"
+                    timestamp: "2026-05-11T14:28:00Z"
+                    properties:
+                      button: "add-to-cart"
+                      productId: "prod_8x4k9m2p"
+                total: 2
+                hasMore: false
   /metrics:
     get:
       summary: Query metrics
@@ -29,9 +86,231 @@ paths:
           required: true
           schema:
             type: string
+          example: "page_views"
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [1h, 24h, 7d, 30d]
+          example: "24h"
       responses:
         '200':
           description: Metric data
+          content:
+            application/json:
+              example:
+                metric: "page_views"
+                period: "24h"
+                value: 12458
+                change: 12.5
+                change_direction: "up"
+                breakdown:
+                  - source: "direct"
+                    value: 4532
+                  - source: "organic"
+                    value: 6218
+                  - source: "referral"
+                    value: 1708
+  /funnels:
+    post:
+      summary: Define and analyze a funnel
+      operationId: createFunnel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Purchase Funnel"
+              steps:
+                - event: "page_view"
+                  name: "Product Page"
+                - event: "add_to_cart"
+                  name: "Add to Cart"
+                - event: "begin_checkout"
+                  name: "Checkout Started"
+                - event: "purchase_completed"
+                  name: "Purchase"
+              date_range:
+                start: "2026-04-01"
+                end: "2026-05-11"
+      responses:
+        '200':
+          description: Funnel analysis results
+          content:
+            application/json:
+              example:
+                funnel_id: "fun_4k8m2p9x"
+                name: "Purchase Funnel"
+                date_range:
+                  start: "2026-04-01"
+                  end: "2026-05-11"
+                steps:
+                  - name: "Product Page"
+                    event: "page_view"
+                    users: 45230
+                    conversion_rate: 100.0
+                  - name: "Add to Cart"
+                    event: "add_to_cart"
+                    users: 8923
+                    conversion_rate: 19.73
+                  - name: "Checkout Started"
+                    event: "begin_checkout"
+                    users: 3241
+                    conversion_rate: 7.17
+                  - name: "Purchase"
+                    event: "purchase_completed"
+                    users: 1876
+                    conversion_rate: 4.15
+                overall_conversion: 4.15
+                dropped_users: 43354
+  /segments:
+    get:
+      summary: List audience segments
+      operationId: listSegments
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: Segment list
+          content:
+            application/json:
+              example:
+                segments:
+                  - id: "seg_9m3k2p7x"
+                    name: "High Value Customers"
+                    description: "Customers with LTV > $500"
+                    size: 4521
+                    created_at: "2026-03-01T10:00:00Z"
+                  - id: "seg_1k5m8p3n"
+                    name: "Abandoned Cart Users"
+                    description: "Added items but didn't purchase in 7 days"
+                    size: 892
+                    created_at: "2026-04-15T14:30:00Z"
+                total: 2
+    post:
+      summary: Create a new segment
+      operationId: createSegment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Newsletter Subscribers"
+              description: "Users who opted into email marketing"
+              criteria:
+                - field: "email_subscribed"
+                  operator: equals
+                  value: true
+                - field: "last_purchase_date"
+                  operator: greater_than
+                  value: "2026-01-01"
+      responses:
+        '201':
+          description: Segment created
+          content:
+            application/json:
+              example:
+                id: "seg_new7p2m4k"
+                name: "Newsletter Subscribers"
+                description: "Users who opted into email marketing"
+                criteria:
+                  - field: "email_subscribed"
+                    operator: equals
+                    value: true
+                  - field: "last_purchase_date"
+                    operator: greater_than
+                    value: "2026-01-01"
+                size: 0
+                created_at: "2026-05-11T14:45:00Z"
+                message: "Segment created. Size will be calculated asynchronously."
+  /dashboards:
+    get:
+      summary: List dashboards
+      operationId: listDashboards
+      responses:
+        '200':
+          description: Dashboard list
+          content:
+            application/json:
+              example:
+                dashboards:
+                  - id: "dash_8p4k2m7x"
+                    name: "E-Commerce Overview"
+                    description: "Key metrics for online store"
+                    widgets: 6
+                    last_viewed: "2026-05-11T14:00:00Z"
+                  - id: "dash_3m9k5p1n"
+                    name: "Marketing Performance"
+                    description: "Campaign and conversion metrics"
+                    widgets: 4
+                    last_viewed: "2026-05-10T09:30:00Z"
+                total: 2
+    post:
+      summary: Create a new dashboard
+      operationId: createDashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Q2 Performance Review"
+              description: "Quarterly business metrics"
+              layout: "grid"
+      responses:
+        '201':
+          description: Dashboard created
+          content:
+            application/json:
+              example:
+                id: "dash_new2k8p5m"
+                name: "Q2 Performance Review"
+                description: "Quarterly business metrics"
+                layout: "grid"
+                widgets: []
+                created_at: "2026-05-11T15:00:00Z"
+  /dashboards/{id}/widgets:
+    post:
+      summary: Add widget to dashboard
+      operationId: addWidget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "dash_8p4k2m7x"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              type: "line_chart"
+              title: "Daily Sales Trend"
+              metric: "revenue"
+              period: "30d"
+              size: "large"
+      responses:
+        '201':
+          description: Widget added
+          content:
+            application/json:
+              example:
+                widget_id: "widget_4m7p9k2x"
+                dashboard_id: "dash_8p4k2m7x"
+                type: "line_chart"
+                title: "Daily Sales Trend"
+                metric: "revenue"
+                period: "30d"
+                size: "large"
+                position:
+                  x: 0
+                  y: 0
+                  w: 6
+                  h: 4
 components:
   schemas:
     Event:
@@ -42,9 +321,45 @@ components:
       properties:
         name:
           type: string
+          example: "page_view"
         timestamp:
           type: string
           format: date-time
+          example: "2026-05-11T14:30:00Z"
         properties:
           type: object
           additionalProperties: true
+          example:
+            url: "/products/premium-widget"
+            referrer: "https://google.com"
+    Funnel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+        overall_conversion:
+          type: number
+        dropped_users:
+          type: integer
+    Segment:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        size:
+          type: integer
+        criteria:
+          type: array
+        created_at:
+          type: string
+          format: date-time
