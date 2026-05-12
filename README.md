@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="logo.svg" alt="Zephyr" width="380" />
+<img src="logo.svg" alt="Zephyr" width="500" />
 
 **Production-ready API documentation that developers actually enjoy using.**
 
