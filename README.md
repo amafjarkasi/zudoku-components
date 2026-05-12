@@ -1,5 +1,7 @@
 # Zephyr Developer Portal
 
+![Zephyr Logo](logo.svg)
+
 A comprehensive **Zudoku**-powered documentation site for the Syntara API platform — covering E-Commerce, Analytics, and Authentication services. This project serves as both a complete developer portal and a reference implementation for building interactive API documentation with Zudoku.
 
 ## What This Project Is
